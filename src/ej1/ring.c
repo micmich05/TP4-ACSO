@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-
 int main(int argc, char **argv)
 {	
     int start, status, pid, n;
@@ -43,9 +42,10 @@ int main(int argc, char **argv)
         }
         
         if (pid == 0) { // Child process
-            // Each process reads from previous and writes to next
-            int read_pipe = (i == 1) ? n - 1 : i - 2;
-            int write_pipe = i - 1;
+            // Process i reads from pipe i-1 and writes to pipe i
+            // With wrap-around for process 1, which reads from pipe n-1
+            int read_pipe = (i - 1 + n - 1) % n;  // Process i reads from process i-1
+            int write_pipe = (i - 1) % n;         // Process i writes to process i+1
             
             // Close all unused pipes
             for (int j = 0; j < n; j++) {
@@ -56,8 +56,8 @@ int main(int argc, char **argv)
             }
             
             // Close unused ends of used pipes
-            close(pipes[read_pipe][1]);
-            close(pipes[write_pipe][0]);
+            close(pipes[read_pipe][1]); // Close write end of read pipe
+            close(pipes[write_pipe][0]); // Close read end of write pipe
             
             int value;
             read(pipes[read_pipe][0], &value, sizeof(int));
@@ -73,18 +73,20 @@ int main(int argc, char **argv)
     }
     
     /* Parent process */
-    // Set up communication with the ring
-    int write_to_start = (start == 1) ? n - 1 : start - 2; // Pipe that process 'start' reads from
-    int read_from_start = start - 1; // Pipe that process 'start' writes to
+    // For a sequential ring:
+    // - Parent should inject at the pipe that process 'start' reads from (start-1)
+    // - Parent should read back from the pipe after it goes through all processes
+    int write_to_start = (start - 1) % n;  // Pipe that process 'start' reads from
+    int read_from_last = (start - 1 + n - 1) % n;  // Pipe before start (completing the ring)
     
     // Close all unused pipes
     for (int j = 0; j < n; j++) {
-        if (j != write_to_start && j != read_from_start) {
+        if (j != write_to_start && j != read_from_last) {
             close(pipes[j][0]);
             close(pipes[j][1]);
         } else {
-            if (j == write_to_start) close(pipes[j][0]);
-            if (j == read_from_start) close(pipes[j][1]);
+            if (j == write_to_start) close(pipes[j][0]);  // Close read end
+            if (j == read_from_last) close(pipes[j][1]);  // Close write end
         }
     }
     
@@ -93,8 +95,8 @@ int main(int argc, char **argv)
     close(pipes[write_to_start][1]);
     
     // Read the final value after it goes around the ring
-    read(pipes[read_from_start][0], buffer, sizeof(int));
-    close(pipes[read_from_start][0]);
+    read(pipes[read_from_last][0], buffer, sizeof(int));
+    close(pipes[read_from_last][0]);
     
     // Print the final result
     printf("Valor final después de recorrer el anillo: %d\n", buffer[0]);
