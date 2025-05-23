@@ -5,27 +5,34 @@
 #include <sys/wait.h>
 
 int main(int argc, char **argv)
-{	
+{
     int start, status, pid, n;
     int buffer[1];
 
-    if (argc != 4){ printf("Uso: anillo <n> <c> <s> \n"); exit(0);}
-    
-    /* Parsing of arguments */
-    n = atoi(argv[1]);        // número de procesos
-    buffer[0] = atoi(argv[2]); // valor inicial del mensaje
-    start = atoi(argv[3]);     // proceso que inicia la comunicación
-    
-    // Validar que start esté dentro del rango válido
+    if (argc != 4) {
+        printf("Uso: anillo <n> <c> <s>\n");
+        exit(0);
+    }
+
+    /* Parsing de argumentos */
+    n = atoi(argv[1]);        // Número de procesos en el anillo
+    buffer[0] = atoi(argv[2]);  // Valor inicial del mensaje
+    start = atoi(argv[3]);      // Proceso (1-indexado) que inicia la comunicación
+
+    if (n < 2) {
+        fprintf(stderr, "Error: se necesitan al menos 2 procesos\n");
+        exit(1);
+    }
+
+    // Validar que start esté dentro del rango
     if (start < 1 || start > n) {
         printf("Error: el proceso inicial debe estar entre 1 y %d\n", n);
         exit(1);
     }
-    
-    printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i \n", n, buffer[0], start);
-    
-    /* You should start programming from here... */
-    
+
+    printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i\n",
+           n, buffer[0], start);
+
     // Crear n pipes para la comunicación entre procesos
     int pipes[n][2];
     for (int i = 0; i < n; i++) {
@@ -34,77 +41,86 @@ int main(int argc, char **argv)
             exit(1);
         }
     }
-    
-    // Crear procesos hijos
+
+    // Crear procesos hijos que formarán el anillo
     for (int i = 0; i < n; i++) {
         pid = fork();
         if (pid < 0) {
             perror("fork");
             exit(1);
         }
-        
         if (pid == 0) {
-            // Proceso hijo i+1 (numerados de 1 a n)
-            int my_id = i + 1;
-            
-            // Determinar de qué pipe leer y en cuál escribir
-            int read_pipe = (i == 0) ? (n - 1) : (i - 1); // El primer proceso lee del último pipe
-            int write_pipe = i;  // Escribo en mi pipe
-            
-            // Cerrar todos los extremos de pipe no utilizados
+            // Proceso hijo i+1 (identificados de 1 a n)
+            // int my_id = i + 1;  // Si se quiere documentar el id, pero no es usado
+            // (void)my_id; // Para suprimir warning
+
+            // Cada hijo lee del pipe que tiene a su izquierda:
+            // El primer hijo (i == 0) lee del pipe[n-1], el resto lee de pipe[i-1]
+            int read_pipe = (i == 0) ? (n - 1) : (i - 1);
+            // Cada hijo escribe en su propio pipe
+            int write_pipe = i;
+
+            // Cerrar en el hijo todos los extremos de pipes que no usará
             for (int j = 0; j < n; j++) {
-                if (j != read_pipe) {
-                    close(pipes[j][0]); // Cerrar lectura
-                }
-                if (j != write_pipe) {
-                    close(pipes[j][1]); // Cerrar escritura
-                }
+                if (j != read_pipe)
+                    close(pipes[j][0]);
+                if (j != write_pipe)
+                    close(pipes[j][1]);
             }
-            
-            // Leer mensaje
-            read(pipes[read_pipe][0], buffer, sizeof(int));
-            
-            // Incrementar el valor
+
+            // Leer mensaje del pipe asignado
+            if (read(pipes[read_pipe][0], buffer, sizeof(int)) != sizeof(int)) {
+                perror("child read");
+                exit(1);
+            }
+
+            // Incrementar el valor recibido
             buffer[0]++;
-            
-            // Escribir al siguiente
-            write(pipes[write_pipe][1], buffer, sizeof(int));
-            
-            // Cerrar los pipes utilizados
+
+            // Escribir al pipe asignado para enviar al siguiente en el anillo
+            if (write(pipes[write_pipe][1], buffer, sizeof(int)) != sizeof(int)) {
+                perror("child write");
+                exit(1);
+            }
             close(pipes[read_pipe][0]);
             close(pipes[write_pipe][1]);
-            
             exit(0);
         }
     }
-    
-    // Proceso padre - cerrar todos los pipes excepto los necesarios
-    int start_pipe = start - 1; // Pipe al que escribir (proceso inicial)
-    int read_pipe = (start_pipe == 0) ? (n - 1) : (start_pipe - 1); // Pipe del que leer después del recorrido
-    
+
+    // Proceso padre: se encarga de inyectar el mensaje y leer el resultado
+    // Determinar el pipe de escritura (corresponde al hijo 'start')
+    int start_pipe = start - 1;  
+    // El pipe de lectura es el que precede al hijo 'start'
+    int read_pipe = (start_pipe == 0) ? (n - 1) : (start_pipe - 1);
+
+    // En el padre se cierran los extremos que no se usarán:
     for (int i = 0; i < n; i++) {
-        if (i != start_pipe) {
-            close(pipes[i][1]); // Cerrar escritura
-        }
-        if (i != read_pipe) {
-            close(pipes[i][0]); // Cerrar lectura
-        }
+        if (i != start_pipe)
+            close(pipes[i][1]);  // Cerrar escritura excepto la del hijo start
+        if (i != read_pipe)
+            close(pipes[i][0]);  // Cerrar lectura excepto la del predecesor de start
     }
-    
-    // Enviar mensaje inicial
-    write(pipes[start_pipe][1], buffer, sizeof(int));
+
+    // Enviar el mensaje inicial al hijo "start"
+    if (write(pipes[start_pipe][1], buffer, sizeof(int)) != sizeof(int)) {
+        perror("parent write");
+        exit(1);
+    }
     close(pipes[start_pipe][1]);
-    
-    // Leer resultado final
-    read(pipes[read_pipe][0], buffer, sizeof(int));
+
+    // Leer el mensaje final que regresa del anillo
+    if (read(pipes[read_pipe][0], buffer, sizeof(int)) != sizeof(int)) {
+        perror("parent read");
+        exit(1);
+    }
     close(pipes[read_pipe][0]);
-    
+
     printf("Resultado final: %d\n", buffer[0]);
-    
-    // Esperar a que terminen todos los procesos hijos
+
+    // Esperar a que finalicen todos los procesos hijos
     for (int i = 0; i < n; i++) {
         wait(&status);
     }
-    
     return 0;
 }
