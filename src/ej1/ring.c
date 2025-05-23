@@ -43,9 +43,14 @@ int main(int argc, char **argv)
         }
         
         if (pid == 0) { // Child process
-            // Each process reads from previous and writes to next
-            int read_pipe = (i == 1) ? n - 1 : i - 2;
-            int write_pipe = i - 1;
+            int my_pos = i;
+            int prev_pos = (my_pos == 1) ? n : my_pos - 1;
+            int next_pos = (my_pos == n) ? 1 : my_pos + 1;
+            
+            // Pipe to read from previous process
+            int read_pipe = prev_pos - 1;
+            // Pipe to write to next process
+            int write_pipe = my_pos - 1;
             
             // Close all unused pipes
             for (int j = 0; j < n; j++) {
@@ -56,12 +61,13 @@ int main(int argc, char **argv)
             }
             
             // Close unused ends of used pipes
-            close(pipes[read_pipe][1]);
-            close(pipes[write_pipe][0]);
+            close(pipes[read_pipe][1]);  // Close write end of read pipe
+            close(pipes[write_pipe][0]);  // Close read end of write pipe
             
             int value;
             read(pipes[read_pipe][0], &value, sizeof(int));
             
+            printf("Proceso %d recibió %d, incrementa y envía %d\n", my_pos, value, value + 1);
             value++; // Increment the value
             
             write(pipes[write_pipe][1], &value, sizeof(int));
@@ -73,31 +79,33 @@ int main(int argc, char **argv)
     }
     
     /* Parent process */
-    // Set up communication with the ring
-    int write_to_start = start - 1;
-    int read_from_last = (start == 1) ? n - 1 : start - 2;
+    // Determine which pipes to use for communication
+    int write_pipe = start - 1;  // Pipe to write to starting process
+    int read_pipe = start % n;   // Pipe to read from the process before starting process
     
     // Close all unused pipes
     for (int j = 0; j < n; j++) {
-        if (j != write_to_start && j != read_from_last) {
+        if (j != write_pipe && j != read_pipe) {
             close(pipes[j][0]);
             close(pipes[j][1]);
         } else {
-            if (j == write_to_start) close(pipes[j][0]);
-            if (j == read_from_last) close(pipes[j][1]);
+            if (j == write_pipe) close(pipes[j][0]);  // Close read end of write pipe
+            if (j == read_pipe) close(pipes[j][1]);   // Close write end of read pipe
         }
     }
     
     // Send the initial value to the starting process
-    write(pipes[write_to_start][1], buffer, sizeof(int));
-    close(pipes[write_to_start][1]);
+    printf("Padre envía %d al proceso %d\n", buffer[0], start);
+    write(pipes[write_pipe][1], buffer, sizeof(int));
+    close(pipes[write_pipe][1]);
     
     // Read the final value after it goes around the ring
-    read(pipes[read_from_last][0], buffer, sizeof(int));
-    close(pipes[read_from_last][0]);
+    read(pipes[read_pipe][0], buffer, sizeof(int));
+    printf("Padre recibe valor final: %d\n", buffer[0]);
+    close(pipes[read_pipe][0]);
     
     // Print the final result
-    printf("Valor final después de recorrer el anillo: %d\n", buffer[0]);
+    printf("Resultado final: %d\n", buffer[0]);
     
     // Wait for all children to finish
     for (int i = 0; i < n; i++) {
