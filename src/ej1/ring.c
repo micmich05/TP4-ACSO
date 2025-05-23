@@ -74,17 +74,17 @@ int main(int argc, char **argv)
     
     /* Parent process */
     // Set up communication with the ring
-    int write_to_start = start - 1;
-    int read_from_last = (start == 1) ? n - 1 : start - 2;
+    int write_to_start = (start == 1) ? n - 1 : start - 2; // Pipe that process 'start' reads from
+    int read_from_start = start - 1; // Pipe that process 'start' writes to
     
     // Close all unused pipes
     for (int j = 0; j < n; j++) {
-        if (j != write_to_start && j != read_from_last) {
+        if (j != write_to_start && j != read_from_start) {
             close(pipes[j][0]);
             close(pipes[j][1]);
         } else {
             if (j == write_to_start) close(pipes[j][0]);
-            if (j == read_from_last) close(pipes[j][1]);
+            if (j == read_from_start) close(pipes[j][1]);
         }
     }
     
@@ -93,8 +93,8 @@ int main(int argc, char **argv)
     close(pipes[write_to_start][1]);
     
     // Read the final value after it goes around the ring
-    read(pipes[read_from_last][0], buffer, sizeof(int));
-    close(pipes[read_from_last][0]);
+    read(pipes[read_from_start][0], buffer, sizeof(int));
+    close(pipes[read_from_start][0]);
     
     // Print the final result
     printf("Valor final después de recorrer el anillo: %d\n", buffer[0]);
