@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 
     if (argc != 4) {
         printf("Uso: anillo <n> <c> <s>\n");
-        exit(EXIT_FAILURE);
+        exit(0);
     }
     /* Parsing de argumentos */
     n        = atoi(argv[1]);   // número de hijos
