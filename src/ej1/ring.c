@@ -4,96 +4,105 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-int main(int argc, char **argv) {
-    if (argc != 4) {
-        fprintf(stderr, "Uso: anillo <n> <c> <s>\n");
+
+int main(int argc, char **argv)
+{	
+    int start, status, pid, n;
+    int buffer[1];
+
+    if (argc != 4){ printf("Uso: anillo <n> <c> <s> \n"); exit(0);}
+    
+    /* Parsing of arguments */
+    n = atoi(argv[1]);
+    buffer[0] = atoi(argv[2]);
+    start = atoi(argv[3]);
+    
+    if (n < 3 || start < 1 || start > n) {
+        printf("Error: n debe ser >= 3 y s debe estar entre 1 y n\n");
         exit(1);
     }
-
-    int n     = atoi(argv[1]);
-    int value = atoi(argv[2]);
-    int start = atoi(argv[3]);
-    if (n < 1 || start < 1 || start > n) {
-        fprintf(stderr, "Error: argumentos inválidos\n");
-        exit(1);
-    }
-
-    printf("Se crearán %d procesos, se enviará el valor %d desde proceso %d\n",
-           n, value, start);
-
-    /* 1) Crear n pipes */
-    int pipefd[n][2];
+    
+    printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i \n", n, buffer[0], start);
+    
+    /* Create pipes for the ring */
+    int pipes[n][2];
     for (int i = 0; i < n; i++) {
-        if (pipe(pipefd[i]) < 0) {
-            perror("pipe");
+        if (pipe(pipes[i]) == -1) {
+            perror("Error creando pipe");
             exit(1);
         }
     }
-
-    /* 2) Fork de los n hijos */
-    for (int i = 0; i < n; i++) {
-        pid_t pid = fork();
+    
+    /* Create child processes */
+    for (int i = 1; i <= n; i++) {
+        pid = fork();
+        
         if (pid < 0) {
-            perror("fork");
+            perror("Error en fork");
             exit(1);
         }
-        if (pid == 0) {
-            /* --- código de cada hijo i (i = 0…n-1) --- */
-            int id       = i + 1;
-            int read_fd  = pipefd[i][0];            // leer de su pipe
-            int write_fd = pipefd[(i + 1) % n][1];  // escribir al siguiente
-
-            /* cerrar todos los extremos que no use este hijo */
+        
+        if (pid == 0) { // Child process
+            // Each process reads from previous and writes to next
+            int read_pipe = (i == 1) ? n - 1 : i - 2;
+            int write_pipe = i - 1;
+            
+            // Close all unused pipes
             for (int j = 0; j < n; j++) {
-                if (j != i)           close(pipefd[j][0]);
-                if (j != (i + 1) % n) close(pipefd[j][1]);
+                if (j != read_pipe && j != write_pipe) {
+                    close(pipes[j][0]);
+                    close(pipes[j][1]);
+                }
             }
-
-            /* leer, incrementar, enviar */
-            int v;
-            if (read(read_fd, &v, sizeof(v)) != sizeof(v)) {
-                perror("read hijo");
-                exit(1);
-            }
-            printf("[Hijo %d] recibió %d → envía %d\n", id, v, v + 1);
-            v++;
-            if (write(write_fd, &v, sizeof(v)) != sizeof(v)) {
-                perror("write hijo");
-                exit(1);
-            }
-
-            /* al hacer exit() se cierran read_fd y write_fd */
+            
+            // Close unused ends of used pipes
+            close(pipes[read_pipe][1]);
+            close(pipes[write_pipe][0]);
+            
+            int value;
+            read(pipes[read_pipe][0], &value, sizeof(int));
+            
+            value++; // Increment the value
+            
+            write(pipes[write_pipe][1], &value, sizeof(int));
+            
+            close(pipes[read_pipe][0]);
+            close(pipes[write_pipe][1]);
             exit(0);
         }
-        /* el padre sigue creando los siguientes hijos */
     }
-
-    /* --- código del padre --- */
-    int idx = start - 1;
-    /* cerrar todos los extremos salvo los de inyección y recolección */
+    
+    /* Parent process */
+    // Set up communication with the ring
+    int write_to_start = start - 1;
+    int read_from_last = (start == 1) ? n - 1 : start - 2;
+    
+    // Close all unused pipes
     for (int j = 0; j < n; j++) {
-        if (j != idx)       close(pipefd[j][0]);
-        if (j != idx)       close(pipefd[j][1]);
+        if (j != write_to_start && j != read_from_last) {
+            close(pipes[j][0]);
+            close(pipes[j][1]);
+        } else {
+            if (j == write_to_start) close(pipes[j][0]);
+            if (j == read_from_last) close(pipes[j][1]);
+        }
     }
-
-    /* inyectar el valor inicial */
-    if (write(pipefd[idx][1], &value, sizeof(value)) != sizeof(value)) {
-        perror("write padre");
-        exit(1);
+    
+    // Send the initial value to the starting process
+    write(pipes[write_to_start][1], buffer, sizeof(int));
+    close(pipes[write_to_start][1]);
+    
+    // Read the final value after it goes around the ring
+    read(pipes[read_from_last][0], buffer, sizeof(int));
+    close(pipes[read_from_last][0]);
+    
+    // Print the final result
+    printf("Valor final después de recorrer el anillo: %d\n", buffer[0]);
+    
+    // Wait for all children to finish
+    for (int i = 0; i < n; i++) {
+        wait(&status);
     }
-    close(pipefd[idx][1]);  // cerrar el lado de escritura para que el último hijo vea EOF
-
-    /* leer el resultado final */
-    if (read(pipefd[idx][0], &value, sizeof(value)) != sizeof(value)) {
-        perror("read padre");
-        exit(1);
-    }
-    printf("Resultado final: %d\n", value);
-    close(pipefd[idx][0]);
-
-    /* esperar a todos los hijos */
-    while (wait(NULL) > 0)
-        ;
-
+    
     return 0;
 }
