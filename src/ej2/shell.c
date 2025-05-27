@@ -77,6 +77,7 @@
 #define MAX_ARGS     50
 
 int main() {
+    //Puedo asumir esto?
     char command[256];
     char *commands[MAX_COMMANDS];
     int command_count;
@@ -103,7 +104,6 @@ int main() {
 
         if (command_count == 0) continue;
 
-        // Si tengo N comandos, necesito N-1 pipes
         int N = command_count;
         int pipes[N-1][2];
         for (int i = 0; i < N-1; i++) {
@@ -154,16 +154,14 @@ int main() {
 
             // --- en el padre: cierro al vuelo los extremos de pipe que ya no necesito ---
             if (i > 0) {
-                close(pipes[i-1][0]);  // aqui
+                close(pipes[i-1][0]);  
             }
             if (i < N-1) {
-                close(pipes[i][1]);    // aqui
+                close(pipes[i][1]);    
             }
 
             pids[i] = pid;
         }
-
-        // Ya no quedan descriptores de pipe abiertos en el padre
 
         // Esperar a que terminen todos los hijos
         for (int i = 0; i < N; i++) {
