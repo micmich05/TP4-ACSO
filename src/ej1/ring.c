@@ -24,14 +24,14 @@ int main(int argc, char **argv)
     int total = n + 1; // padre + n hijos
     // matriz de pipes: pipes[i] conecta ring_procs[i] -> ring_procs[(i+1)%(n+1)]
     int (*pipes)[2] = malloc(sizeof(int[2]) * total);
-    if (!pipes) { perror("malloc"); exit(EXIT_FAILURE); }
+    // if (!pipes) { perror("malloc"); exit(EXIT_FAILURE); }
 
-    for (int i = 0; i < total; ++i) {
-        if (pipe(pipes[i]) == -1) {
-            perror("pipe");
-            exit(EXIT_FAILURE);
-        }
-    }
+    // for (int i = 0; i < total; ++i) {
+    //     if (pipe(pipes[i]) == -1) {
+    //         perror("pipe");
+    //         exit(EXIT_FAILURE);
+    //     }
+    // }
 
     /* Fork de los n hijos */
     int myid = -1;
@@ -48,6 +48,7 @@ int main(int argc, char **argv)
         // el padre sigue creando más hijos
     }
 
+    //manejo de indices
     int ring_idx;
     if (pid > 0) {
         // estamos en el padre

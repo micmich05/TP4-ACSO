@@ -74,7 +74,7 @@
 #include <string.h>
 
 #define MAX_COMMANDS 200
-#define MAX_ARGS     50
+#define MAX_ARGS     50 //Puedo asumir esto?
 
 int main() {
     //Puedo asumir esto?
@@ -105,7 +105,7 @@ int main() {
         if (command_count == 0) continue;
 
         int N = command_count;
-        int pipes[N-1][2];
+        int pipes[N-1][2]; // Cree N-1 pipes en N comandos en vez de 1 solo en el padre
         for (int i = 0; i < N-1; i++) {
             if (pipe(pipes[i]) == -1) {
                 perror("pipe");
