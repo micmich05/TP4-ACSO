@@ -302,6 +302,7 @@ int main(int argc, char **argv)
         for (int i = 0; i < n; ++i) { //espero a todos los hijos
             wait(NULL);
         }
+        
     } else { //hijos
         int recv;
         int prev = (ring_idx - 1 + total) % total;

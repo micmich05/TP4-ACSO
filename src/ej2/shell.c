@@ -152,15 +152,21 @@ int main() {
                 exit(EXIT_FAILURE);
             }
 
-            // --- en el padre: cierro al vuelo los extremos de pipe que ya no necesito ---
-            if (i > 0) {
-                close(pipes[i-1][0]);  
-            }
-            if (i < N-1) {
-                close(pipes[i][1]);    
-            }
+            // // --- en el padre: cierro al vuelo los extremos de pipe que ya no necesito ---
+            // if (i > 0) {
+            //     close(pipes[i-1][0]);  
+            // }
+            // if (i < N-1) {
+            //     close(pipes[i][1]);    
+            // }
 
             pids[i] = pid;
+        }
+
+        // Cerrar TODOS los pipes en el padre después de crear todos los procesos
+        for (int i = 0; i < N-1; i++) {
+            close(pipes[i][0]);
+            close(pipes[i][1]);
         }
 
         // Esperar a que terminen todos los hijos
