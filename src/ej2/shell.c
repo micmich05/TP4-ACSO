@@ -82,14 +82,13 @@ int main() {
     int command_count;
 
     while (1) {
-        // --- Leer línea ---
+
         printf("Shell> ");
         fflush(stdout);
         if (!fgets(command, sizeof(command), stdin))
-            break;  // EOF o Ctrl+D
+            break;  
         command[strcspn(command, "\n")] = '\0';
 
-        // --- Separar en sub-comandos por '|' ---
         command_count = 0;
         char *tok = strtok(command, "|");
         while (tok && command_count < MAX_COMMANDS) {
@@ -101,9 +100,10 @@ int main() {
             commands[command_count++] = tok;
             tok = strtok(NULL, "|");
         }
+
         if (command_count == 0) continue;
 
-        //Si tengo N comandos, necesito N-1 pipes
+        // Si tengo N comandos, necesito N-1 pipes
         int N = command_count;
         int pipes[N-1][2];
         for (int i = 0; i < N-1; i++) {
@@ -113,7 +113,7 @@ int main() {
             }
         }
 
-        //Necesito un fork y execvp por cada comando
+        // Necesito un fork y execvp por cada comando
         pid_t pids[N];
         for (int i = 0; i < N; i++) {
             pid_t pid = fork();
@@ -121,26 +121,22 @@ int main() {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
-            
-        if (pid == 0) {
-            if (i > 0) {
-                //Modifico el stdin para que tenga como entrada el STDOUT del pipe anterior
-                dup2(pipes[i-1][0], STDIN_FILENO);
-                close(pipes[i-1][0]); // Cerrar inmediatamente después del dup2
-            }
-            if (i < N-1) {
-                //Si no es el último comando, redirijo stdout al pipe siguiente
-                dup2(pipes[i][1], STDOUT_FILENO);
-                close(pipes[i][1]); // Cerrar inmediatamente después del dup2
-            }
-            
-            //Cerrar todos los demás fds de pipes que no necesito
-            for (int j = 0; j < N-1; j++) {
-                if (j != i-1) close(pipes[j][0]); // No cerrar el que ya cerré arriba
-                if (j != i) close(pipes[j][1]);   // No cerrar el que ya cerré arriba
-            }
 
-                //Tokenizar este comando en args[] para ejecutar execvp
+            if (pid == 0) {
+                // --- en el hijo: redirijo stdin/stdout según posición ---
+                if (i > 0) {
+                    dup2(pipes[i-1][0], STDIN_FILENO);
+                }
+                if (i < N-1) {
+                    dup2(pipes[i][1], STDOUT_FILENO);
+                }
+                // cierro todas las copias de los pipes en el hijo
+                for (int j = 0; j < N-1; j++) {
+                    close(pipes[j][0]);  // aqui
+                    close(pipes[j][1]);  // aqui
+                }
+
+                // Tokenizar este comando en args[] para ejecutar execvp
                 char *args[MAX_ARGS];
                 int argc = 0;
                 char *t2 = strtok(commands[i], " ");
@@ -151,22 +147,25 @@ int main() {
                 args[argc] = NULL;
 
                 execvp(args[0], args);
-
-                //Si sigue aca es porque execvp falló
+                // Si sigue acá es porque execvp falló
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
-            //En el padre, guardo PID y sigo
+
+            // --- en el padre: cierro al vuelo los extremos de pipe que ya no necesito ---
+            if (i > 0) {
+                close(pipes[i-1][0]);  // aqui
+            }
+            if (i < N-1) {
+                close(pipes[i][1]);    // aqui
+            }
+
             pids[i] = pid;
         }
 
-        //Cierro todos los pipes en el padre
-        for (int i = 0; i < N-1; i++) {
-            close(pipes[i][0]);
-            close(pipes[i][1]);
-        }
-        
-        // Espero a que terminen todos los hijos
+        // Ya no quedan descriptores de pipe abiertos en el padre
+
+        // Esperar a que terminen todos los hijos
         for (int i = 0; i < N; i++) {
             waitpid(pids[i], NULL, 0);
         }
@@ -174,3 +173,4 @@ int main() {
 
     return 0;
 }
+
