@@ -104,26 +104,26 @@ int main() {
         if (command_count == 0) continue;
 
         // --- Si sólo hay un comando, podrías manejarlo sin pipes ---
-        if (command_count == 1) {
-            // parsear y execvp directo...
-            char *args[MAX_ARGS];
-            int argc = 0;
-            char *t = strtok(commands[0], " ");
-            while (t && argc < MAX_ARGS-1) {
-                args[argc++] = t;
-                t = strtok(NULL, " ");
-            }
-            args[argc] = NULL;
-            if (fork() == 0) {
-                execvp(args[0], args);
-                perror("exec");
-                exit(EXIT_FAILURE);
-            }
-            wait(NULL);
-            continue;
-        }
+        // if (command_count == 1) {
+        //     // parsear y execvp directo...
+        //     char *args[MAX_ARGS];
+        //     int argc = 0;
+        //     char *t = strtok(commands[0], " ");
+        //     while (t && argc < MAX_ARGS-1) {
+        //         args[argc++] = t;
+        //         t = strtok(NULL, " ");
+        //     }
+        //     args[argc] = NULL;
+        //     if (fork() == 0) {
+        //         execvp(args[0], args);
+        //         perror("exec");
+        //         exit(EXIT_FAILURE);
+        //     }
+        //     wait(NULL);
+        //     continue;
+        // }
 
-        // --- Crear N-1 pipes ---
+        //Si tengo N comandos, necesito N-1 pipes
         int N = command_count;
         int pipes[N-1][2];
         for (int i = 0; i < N-1; i++) {
@@ -133,7 +133,7 @@ int main() {
             }
         }
 
-        // --- Fork y exec de cada comando ---
+        //Necesito un fork y execvp por cada comando
         pid_t pids[N];
         for (int i = 0; i < N; i++) {
             pid_t pid = fork();
@@ -141,22 +141,23 @@ int main() {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
+
             if (pid == 0) {
-                // --- En hijo i ---
-                // Si no es el primer comando, redirigir stdin al pipe anterior
                 if (i > 0) {
+                    //Modifico el stdin para que tenga como entrada el STDOUT del pipe anterior
                     dup2(pipes[i-1][0], STDIN_FILENO);
                 }
-                // Si no es el último comando, redirigir stdout al pipe siguiente
                 if (i < N-1) {
+                    //Si no es el último comando, redirijo stdout al pipe siguiente
                     dup2(pipes[i][1], STDOUT_FILENO);
                 }
-                // Cerrar todos los fds de todos los pipes
+                //Cerrar todos los fds de todos los pipes
                 for (int j = 0; j < N-1; j++) {
                     close(pipes[j][0]);
                     close(pipes[j][1]);
                 }
-                // Tokenizar este comando en args[]
+
+                //Tokenizar este comando en args[] para ejecutar execvp
                 char *args[MAX_ARGS];
                 int argc = 0;
                 char *t2 = strtok(commands[i], " ");
@@ -174,12 +175,13 @@ int main() {
             pids[i] = pid;
         }
 
-        // --- Padre cierra todos los extremos de pipe ---
+        //Cierro todos los pipes en el padre
         for (int i = 0; i < N-1; i++) {
             close(pipes[i][0]);
             close(pipes[i][1]);
         }
-        // --- Padre espera a todos los hijos ---
+        
+        // Espero a que terminen todos los hijos
         for (int i = 0; i < N; i++) {
             waitpid(pids[i], NULL, 0);
         }
