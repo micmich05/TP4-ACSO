@@ -61,101 +61,100 @@ int main() {
     while (1) {
         printf("Shell> ");
         if (!fgets(command, sizeof(command), stdin)) {
-            // EOF or read error
+            // Ctrl+D o error de lectura → salimos
+            printf("\n");
             break;
         }
 
-        // Remove trailing newline
+        // Eliminar '\n' final
         command[strcspn(command, "\n")] = '\0';
 
-        // Tokenize the command string using '|' as delimiter
+        // ----------------------------
+        // PARTIDA: parsing por pipes
+        // ----------------------------
         command_count = 0;
         char *token = strtok(command, "|");
         while (token != NULL && command_count < MAX_COMMANDS) {
-            // Trim leading spaces
+            // quitar espacios iniciales
             while (*token == ' ') token++;
+            // quitar espacios finales
+            char *end = token + strlen(token) - 1;
+            while (end > token && *end == ' ') { *end = '\0'; end--; }
+
             commands[command_count++] = token;
             token = strtok(NULL, "|");
         }
-        if (command_count == 0) {
-            continue;  // empty line
-        }
 
-        // Create pipes: one pipe between each pair of commands
-        int pipefds[MAX_COMMANDS-1][2];
-        for (int i = 0; i < command_count - 1; i++) {
-            if (pipe(pipefds[i]) < 0) {
+        if (command_count == 0)
+            continue;  // nada que ejecutar
+
+        int num_cmds = command_count;
+        int pipefds[2 * (num_cmds - 1)];
+
+        // 1) Crear los pipes necesarios: uno entre cada par de comandos
+        for (int i = 0; i < num_cmds - 1; i++) {
+            if (pipe(pipefds + i*2) < 0) {
                 perror("pipe");
                 exit(EXIT_FAILURE);
             }
         }
 
-        // Fork a process for each command
-        pid_t pids[MAX_COMMANDS];
-        for (int i = 0; i < command_count; i++) {
-            pids[i] = fork();
-            if (pids[i] < 0) {
+        // 2) Fork + redirecciones para cada comando
+        for (int i = 0; i < num_cmds; i++) {
+            pid_t pid = fork();
+            if (pid < 0) {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
-            if (pids[i] == 0) {
-                // --- Child process ---
-
-                // If not the first command, redirect stdin to previous pipe's read end
+            if (pid == 0) {
+                // ——— En el hijo ———
+                // Si no es el primer comando: stdin viene del pipe anterior
                 if (i > 0) {
-                    if (dup2(pipefds[i-1][0], STDIN_FILENO) < 0) {
+                    if (dup2(pipefds[(i-1)*2], STDIN_FILENO) < 0) {
                         perror("dup2 stdin");
                         exit(EXIT_FAILURE);
                     }
                 }
-                // If not the last command, redirect stdout to current pipe's write end
-                if (i < command_count - 1) {
-                    if (dup2(pipefds[i][1], STDOUT_FILENO) < 0) {
+                // Si no es el último comando: stdout va al siguiente pipe
+                if (i < num_cmds - 1) {
+                    if (dup2(pipefds[i*2 + 1], STDOUT_FILENO) < 0) {
                         perror("dup2 stdout");
                         exit(EXIT_FAILURE);
                     }
                 }
 
-                // Close all pipe fds in the child
-                for (int j = 0; j < command_count - 1; j++) {
-                    close(pipefds[j][0]);
-                    close(pipefds[j][1]);
-                }
+                // Cerrar todos los descriptores de pipe en el hijo
+                for (int j = 0; j < 2*(num_cmds - 1); j++)
+                    close(pipefds[j]);
 
-                // Split commands[i] into args[]
-                char *args[256];
-                int arg_count = 0;
+                // Parsear el comando en args para execvp
+                char *args[MAX_COMMANDS];
+                int argc = 0;
                 char *arg = strtok(commands[i], " ");
-                while (arg != NULL) {
-                    args[arg_count++] = arg;
+                while (arg) {
+                    args[argc++] = arg;
                     arg = strtok(NULL, " ");
                 }
-                args[arg_count] = NULL;
+                args[argc] = NULL;
 
-                // Execute the command
+                // Ejecutar
                 execvp(args[0], args);
-                // If execvp returns, an error occurred
+                // Si execvp retorna, hubo error
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
-            // Parent continues to next command
+            // ——— En el padre: seguimos creando procesos
         }
 
-        // --- Parent process ---
-        // Close all pipe fds
-        for (int i = 0; i < command_count - 1; i++) {
-            close(pipefds[i][0]);
-            close(pipefds[i][1]);
-        }
+        // 3) En el padre, cerrar todos los extremos de pipe
+        for (int i = 0; i < 2*(num_cmds - 1); i++)
+            close(pipefds[i]);
 
-        // Wait for all children to finish
-        for (int i = 0; i < command_count; i++) {
-            int status;
-            waitpid(pids[i], &status, 0);
-        }
+        // 4) Esperar a todos los hijos
+        for (int i = 0; i < num_cmds; i++)
+            wait(NULL);
 
-        // Reset for next loop iteration
-        command_count = 0;
+        // Repetir para la próxima línea de comando
     }
 
     return 0;
