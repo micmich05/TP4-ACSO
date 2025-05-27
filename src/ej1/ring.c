@@ -18,6 +18,11 @@ int main(int argc, char **argv)
     buffer[0] = atoi(argv[2]);  // valor inicial a transmitir
     start    = atoi(argv[3]);   // índice del hijo que arranca
 
+    if (n < 3 || start > n) {
+        printf("Entradas inválidas\n");
+        exit(EXIT_FAILURE);
+    }
+
     printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i\n",
            n, buffer[0], start);
 
