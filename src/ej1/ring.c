@@ -81,7 +81,7 @@ int main(int argc, char **argv)
         //     perror("write padre");
         //     exit(EXIT_FAILURE);
         // }
-        write(pipes[0][1], &buffer[0], sizeof(buffer[0]))
+        write(pipes[0][1], &buffer[0], sizeof(buffer[0]));
         close(pipes[0][1]);
 
         // recibo el resultado final
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
         //     perror("read padre");
         //     exit(EXIT_FAILURE);
         // }
-        read(pipes[total-1][0], &result, sizeof(result))
+        read(pipes[total-1][0], &result, sizeof(result));
         close(pipes[total-1][0]);
 
         printf("Resultado final: %d\n", result);
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
         //     perror("read hijo");
         //     exit(EXIT_FAILURE);
         // }
-        read(pipes[prev][0], &recv, sizeof(recv))
+        read(pipes[prev][0], &recv, sizeof(recv));
         close(pipes[prev][0]);
 
         // incremento y paso al siguiente
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
         //     perror("write hijo");
         //     exit(EXIT_FAILURE);
         // }
-        write(pipes[ring_idx][1], &recv, sizeof(recv))
+        write(pipes[ring_idx][1], &recv, sizeof(recv));
         close(pipes[ring_idx][1]);
 
         exit(EXIT_SUCCESS);
