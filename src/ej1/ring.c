@@ -37,10 +37,10 @@ int main(int argc, char **argv)
     int myid = -1;
     for (int i = 0; i < n; ++i) {
         pid = fork();
-        if (pid < 0) {
-            perror("fork");
-            exit(EXIT_FAILURE);
-        }
+        // if (pid < 0) {
+        //     perror("fork");
+        //     exit(EXIT_FAILURE);
+        // }
         if (pid == 0) {
             myid = i;  // en el hijo, guardo su índice
             break;
@@ -77,18 +77,20 @@ int main(int argc, char **argv)
     if (ring_idx == 0) {
         /* === PADRE === */
         // envío el mensaje inicial al hijo 'start'
-        if (write(pipes[0][1], &buffer[0], sizeof(buffer[0])) != sizeof(buffer[0])) {
-            perror("write padre");
-            exit(EXIT_FAILURE);
-        }
+        // if (write(pipes[0][1], &buffer[0], sizeof(buffer[0])) != sizeof(buffer[0])) {
+        //     perror("write padre");
+        //     exit(EXIT_FAILURE);
+        // }
+        write(pipes[0][1], &buffer[0], sizeof(buffer[0]))
         close(pipes[0][1]);
 
         // recibo el resultado final
         int result;
-        if (read(pipes[total-1][0], &result, sizeof(result)) != sizeof(result)) {
-            perror("read padre");
-            exit(EXIT_FAILURE);
-        }
+        // if (read(pipes[total-1][0], &result, sizeof(result)) != sizeof(result)) {
+        //     perror("read padre");
+        //     exit(EXIT_FAILURE);
+        // }
+        read(pipes[total-1][0], &result, sizeof(result))
         close(pipes[total-1][0]);
 
         printf("Resultado final: %d\n", result);
@@ -101,18 +103,20 @@ int main(int argc, char **argv)
         /* === HIJO === */
         int recv;
         int prev = (ring_idx - 1 + total) % total;
-        if (read(pipes[prev][0], &recv, sizeof(recv)) != sizeof(recv)) {
-            perror("read hijo");
-            exit(EXIT_FAILURE);
-        }
+        // if (read(pipes[prev][0], &recv, sizeof(recv)) != sizeof(recv)) {
+        //     perror("read hijo");
+        //     exit(EXIT_FAILURE);
+        // }
+        read(pipes[prev][0], &recv, sizeof(recv))
         close(pipes[prev][0]);
 
         // incremento y paso al siguiente
         recv++;
-        if (write(pipes[ring_idx][1], &recv, sizeof(recv)) != sizeof(recv)) {
-            perror("write hijo");
-            exit(EXIT_FAILURE);
-        }
+        // if (write(pipes[ring_idx][1], &recv, sizeof(recv)) != sizeof(recv)) {
+        //     perror("write hijo");
+        //     exit(EXIT_FAILURE);
+        // }
+        write(pipes[ring_idx][1], &recv, sizeof(recv))
         close(pipes[ring_idx][1]);
 
         exit(EXIT_SUCCESS);
