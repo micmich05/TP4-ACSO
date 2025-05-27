@@ -103,26 +103,6 @@ int main() {
         }
         if (command_count == 0) continue;
 
-        // --- Si sólo hay un comando, podrías manejarlo sin pipes ---
-        // if (command_count == 1) {
-        //     // parsear y execvp directo...
-        //     char *args[MAX_ARGS];
-        //     int argc = 0;
-        //     char *t = strtok(commands[0], " ");
-        //     while (t && argc < MAX_ARGS-1) {
-        //         args[argc++] = t;
-        //         t = strtok(NULL, " ");
-        //     }
-        //     args[argc] = NULL;
-        //     if (fork() == 0) {
-        //         execvp(args[0], args);
-        //         perror("exec");
-        //         exit(EXIT_FAILURE);
-        //     }
-        //     wait(NULL);
-        //     continue;
-        // }
-
         //Si tengo N comandos, necesito N-1 pipes
         int N = command_count;
         int pipes[N-1][2];
@@ -141,21 +121,24 @@ int main() {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
-
-            if (pid == 0) {
-                if (i > 0) {
-                    //Modifico el stdin para que tenga como entrada el STDOUT del pipe anterior
-                    dup2(pipes[i-1][0], STDIN_FILENO);
-                }
-                if (i < N-1) {
-                    //Si no es el último comando, redirijo stdout al pipe siguiente
-                    dup2(pipes[i][1], STDOUT_FILENO);
-                }
-                //Cerrar todos los fds de todos los pipes
-                for (int j = 0; j < N-1; j++) {
-                    close(pipes[j][0]);
-                    close(pipes[j][1]);
-                }
+            
+        if (pid == 0) {
+            if (i > 0) {
+                //Modifico el stdin para que tenga como entrada el STDOUT del pipe anterior
+                dup2(pipes[i-1][0], STDIN_FILENO);
+                close(pipes[i-1][0]); // Cerrar inmediatamente después del dup2
+            }
+            if (i < N-1) {
+                //Si no es el último comando, redirijo stdout al pipe siguiente
+                dup2(pipes[i][1], STDOUT_FILENO);
+                close(pipes[i][1]); // Cerrar inmediatamente después del dup2
+            }
+            
+            //Cerrar todos los demás fds de pipes que no necesito
+            for (int j = 0; j < N-1; j++) {
+                if (j != i-1) close(pipes[j][0]); // No cerrar el que ya cerré arriba
+                if (j != i) close(pipes[j][1]);   // No cerrar el que ya cerré arriba
+            }
 
                 //Tokenizar este comando en args[] para ejecutar execvp
                 char *args[MAX_ARGS];
@@ -166,12 +149,14 @@ int main() {
                     t2 = strtok(NULL, " ");
                 }
                 args[argc] = NULL;
-                // Ejecutar
+
                 execvp(args[0], args);
+
+                //Si sigue aca es porque execvp falló
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
-            // En el padre, guardo PID y sigo
+            //En el padre, guardo PID y sigo
             pids[i] = pid;
         }
 
