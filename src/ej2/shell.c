@@ -151,15 +151,7 @@ int main() {
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
-
-            // // --- en el padre: cierro al vuelo los extremos de pipe que ya no necesito ---
-            // if (i > 0) {
-            //     close(pipes[i-1][0]);  
-            // }
-            // if (i < N-1) {
-            //     close(pipes[i][1]);    
-            // }
-
+            
             pids[i] = pid;
         }
 
