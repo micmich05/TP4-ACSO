@@ -20,7 +20,12 @@ int main(int argc, char **argv)
     buffer[0] = atoi(argv[2]);  // valor inicial a transmitir
     start    = atoi(argv[3]);   // índice del hijo que arranca
 
-    if (n < 3 || start > n || start <= 0 || n > MAX_PROCESSES) {
+    if (n > MAX_PROCESSES) {
+        printf("Número de procesos excede el máximo permitido (%d)\n", MAX_PROCESSES);
+        exit(EXIT_FAILURE);
+    }
+    
+    if (n < 3 || start > n || start <= 0) {
         printf("Entradas inválidas\n");
         exit(EXIT_FAILURE);
     }
