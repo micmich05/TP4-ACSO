@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv)
 {
-    int start, status, pid, n;
+    int start, pid, n;
     int buffer[1];
 
     if (argc != 4) {
