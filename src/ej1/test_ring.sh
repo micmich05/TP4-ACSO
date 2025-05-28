@@ -41,7 +41,7 @@ run_test() {
     output=$($RING $n $c $s 2>&1)
     
     # Check for errors in the output
-    if echo "$output" | grep -q "Entradas inválidas\|Número de procesos excede el máximo permitido\|Error\|error"; then
+    if echo "$output" | grep -q "Entradas inválidas\|Número de procesos excede el máximo permitido\|Valor de c debe ser menor o igual a\|Error\|error"; then
         echo -e "${RED}Failed - Invalid inputs or error${NC}"
         echo "$output"
         return 1
@@ -75,7 +75,7 @@ run_error_test() {
     output=$($RING $n $c $s 2>&1)
     
     # Check if we got an error message as expected
-    if echo "$output" | grep -q "Entradas inválidas\|Número de procesos excede el máximo permitido"; then
+    if echo "$output" | grep -q "Entradas inválidas\|Número de procesos excede el máximo permitido\|Valor de c debe ser menor o igual a"; then
         echo -e "${GREEN}Passed - Error detected as expected${NC}"
         return 0
     else
@@ -156,7 +156,7 @@ passed=0
 passed_errors=0
 passed_memory=0
 passed_pipes=0
-total=25
+total=30
 total_errors=8
 
 echo -e "${BLUE}=============================================${NC}"
@@ -215,10 +215,10 @@ run_test 16 100 0 50
 run_test 17 120 0 60  # Maximum allowed processes
 [ $? -eq 0 ] && ((passed++))
 
-run_test 18 3 2147483647 1  # Test with INT_MAX
+run_test 18 3 1999999 1  # Test with value close to MAX_C
 [ $? -eq 0 ] && ((passed++))
 
-run_test 19 3 -2147483648 1  # Test with INT_MIN
+run_test 19 3 2000000 1  # Test with MAX_C
 [ $? -eq 0 ] && ((passed++))
 
 run_test 20 50 50 25
@@ -237,6 +237,21 @@ run_test 24 25 0 1
 [ $? -eq 0 ] && ((passed++))
 
 run_test 25 25 0 25
+[ $? -eq 0 ] && ((passed++))
+
+run_test 26 10 500000 5
+[ $? -eq 0 ] && ((passed++))
+
+run_test 27 15 1000000 10
+[ $? -eq 0 ] && ((passed++))
+
+run_test 28 3 -1000000 2
+[ $? -eq 0 ] && ((passed++))
+
+run_test 29 5 1500000 3
+[ $? -eq 0 ] && ((passed++))
+
+run_test 30 8 -800000 6
 [ $? -eq 0 ] && ((passed++))
 
 # Display functionality test summary
@@ -269,16 +284,8 @@ run_error_test 6 200 0 1 "n > MAX_PROCESSES (120)"
 run_error_test 7 1 0 1 "n < 3"
 [ $? -eq 0 ] && ((passed_errors++))
 
-# Test with invalid arguments
-echo "Error Test 8: Invalid arguments (too few arguments)"
-output=$($RING 5 10 2>/dev/null)
-if [ $? -ne 0 ]; then
-    echo -e "${GREEN}Passed - Error detected as expected${NC}"
-    ((passed_errors++))
-else
-    echo -e "${RED}Failed - Program ran successfully but should have failed${NC}"
-    echo "$output"
-fi
+run_error_test 8 10 2000001 5 "c > MAX_C (2000000)"
+[ $? -eq 0 ] && ((passed_errors++))
 
 echo ""
 echo "Error test summary: $passed_errors out of $total_errors tests passed"

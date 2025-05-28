@@ -116,6 +116,7 @@
 #include <sys/wait.h>
 
 #define MAX_PROCESSES 120
+#define MAX_C 2000000
 
 int main(int argc, char **argv)
 {
@@ -133,6 +134,11 @@ int main(int argc, char **argv)
 
     if (n > MAX_PROCESSES) {
         printf("Número de procesos excede el máximo permitido (%d)\n", MAX_PROCESSES);
+        exit(EXIT_FAILURE);
+    }
+
+    if (buffer[0] > MAX_C) {
+        printf("Valor de c debe ser menor o igual a %d\n", MAX_C);
         exit(EXIT_FAILURE);
     }
 
