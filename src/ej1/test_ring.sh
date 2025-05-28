@@ -275,10 +275,10 @@ run_error_test 3 10 0 0 "start <= 0"
 run_error_test 4 10 0 -1 "negative start"
 [ $? -eq 0 ] && ((passed_errors++))
 
-run_error_test 5 121 0 1 "n > MAX_PROCESSES (120)"
+run_error_test 5 124 0 1 "n > MAX_PROCESSES (123)"
 [ $? -eq 0 ] && ((passed_errors++))
 
-run_error_test 6 200 0 1 "n > MAX_PROCESSES (120)"
+run_error_test 6 200 0 1 "n > MAX_PROCESSES (123)"
 [ $? -eq 0 ] && ((passed_errors++))
 
 run_error_test 7 1 0 1 "n < 3"
