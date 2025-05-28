@@ -76,6 +76,39 @@
 #define MAX_COMMANDS 200
 #define MAX_ARGS     50 //Puedo asumir esto?
 
+int parse_args(char *cmd, char **args, int max_args) {
+    int argc = 0;
+    char *p = cmd;
+    
+    while (*p && argc < max_args - 1) {
+        // Saltar espacios
+        while (*p == ' ' || *p == '\t') p++;
+        if (!*p) break;
+        
+        if (*p == '"') {
+            // Argumento entre comillas
+            p++; // saltar comilla inicial
+            args[argc] = p;
+            while (*p && *p != '"') p++;
+            if (*p == '"') {
+                *p = '\0';
+                p++;
+            }
+        } else {
+            // Argumento normal
+            args[argc] = p;
+            while (*p && *p != ' ' && *p != '\t') p++;
+            if (*p) {
+                *p = '\0';
+                p++;
+            }
+        }
+        argc++;
+    }
+    args[argc] = NULL;
+    return argc;
+}
+
 int main() {
     //Puedo asumir esto?
     char command[256];
@@ -122,6 +155,35 @@ int main() {
                 exit(EXIT_FAILURE);
             }
 
+            // if (pid == 0) {
+            //     // --- en el hijo: redirijo stdin/stdout según posición ---
+            //     if (i > 0) {
+            //         dup2(pipes[i-1][0], STDIN_FILENO);
+            //     }
+            //     if (i < N-1) {
+            //         dup2(pipes[i][1], STDOUT_FILENO);
+            //     }
+            //     // cierro todas las copias de los pipes en el hijo
+            //     for (int j = 0; j < N-1; j++) {
+            //         close(pipes[j][0]);  // aqui
+            //         close(pipes[j][1]);  // aqui
+            //     }
+
+            //     // Tokenizar este comando en args[] para ejecutar execvp
+            //     char *args[MAX_ARGS];
+            //     int argc = 0;
+            //     char *t2 = strtok(commands[i], " ");
+            //     while (t2 && argc < MAX_ARGS-1) {
+            //         args[argc++] = t2;
+            //         t2 = strtok(NULL, " ");
+            //     }
+            //     args[argc] = NULL;
+
+            //     execvp(args[0], args);
+            //     // Si sigue acá es porque execvp falló
+            //     perror("execvp");
+            //     exit(EXIT_FAILURE);
+            // }
             if (pid == 0) {
                 // --- en el hijo: redirijo stdin/stdout según posición ---
                 if (i > 0) {
@@ -132,22 +194,15 @@ int main() {
                 }
                 // cierro todas las copias de los pipes en el hijo
                 for (int j = 0; j < N-1; j++) {
-                    close(pipes[j][0]);  // aqui
-                    close(pipes[j][1]);  // aqui
+                    close(pipes[j][0]);
+                    close(pipes[j][1]);
                 }
 
-                // Tokenizar este comando en args[] para ejecutar execvp
+                // Reemplazar el tokenizado simple con la función que maneja comillas
                 char *args[MAX_ARGS];
-                int argc = 0;
-                char *t2 = strtok(commands[i], " ");
-                while (t2 && argc < MAX_ARGS-1) {
-                    args[argc++] = t2;
-                    t2 = strtok(NULL, " ");
-                }
-                args[argc] = NULL;
+                parse_args(commands[i], args, MAX_ARGS);
 
                 execvp(args[0], args);
-                // Si sigue acá es porque execvp falló
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
