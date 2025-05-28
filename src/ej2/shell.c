@@ -141,7 +141,11 @@ int main() {
         int pipes[N-1][2]; // Cree N-1 pipes en N comandos en vez de 1 solo en el padre
         for (int i = 0; i < N-1; i++) {
             if (pipe(pipes[i]) == -1) {
-                perror("pipe");
+                perror("Error al crear pipe");
+                for (int j = 0; j < i; j++) { // Cerrar pipes ya creados
+                    close(pipes[j][0]);
+                    close(pipes[j][1]);
+                }
                 exit(EXIT_FAILURE);
             }
         }
@@ -151,7 +155,7 @@ int main() {
         for (int i = 0; i < N; i++) {
             pid_t pid = fork();
             if (pid < 0) {
-                perror("fork");
+                perror("Error al hacer fork");
                 exit(EXIT_FAILURE);
             }
 
@@ -203,7 +207,7 @@ int main() {
                 parse_args(commands[i], args, MAX_ARGS);
 
                 execvp(args[0], args);
-                perror("execvp");
+                perror("Comando no encontrado");
                 exit(EXIT_FAILURE);
             }
             
