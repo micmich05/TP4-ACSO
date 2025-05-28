@@ -80,7 +80,7 @@ int parse_args(char *cmd, char **args, int max_args) {
     int argc = 0;
     char *p = cmd;
     
-    while (*p && argc < max_args - 1) {
+    while (*p && argc < max_args - 1) {  // Reservar espacio para NULL
         // Saltar espacios
         while (*p == ' ' || *p == '\t') p++;
         if (!*p) break;
@@ -105,12 +105,13 @@ int parse_args(char *cmd, char **args, int max_args) {
         }
         argc++;
     }
+    
     // Verificar si hay más argumentos después de alcanzar el límite
-    if (argc == max_args - 1) {
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p) {
-            return -1;
-        }
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p) {
+        // Hay más argumentos, excede el límite
+        printf("Too many arguments\n");
+        return -1;
     }
     
     args[argc] = NULL;
