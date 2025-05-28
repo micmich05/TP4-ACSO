@@ -110,7 +110,6 @@ int parse_args(char *cmd, char **args, int max_args) {
     while (*p == ' ' || *p == '\t') p++;
     if (*p) {
         // Hay más argumentos, excede el límite
-        printf("Too many arguments\n");
         return -1;
     }
     
