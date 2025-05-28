@@ -213,7 +213,7 @@ int main() {
                 char *args[MAX_ARGS];
                 int argc =parse_args(commands[i], args, MAX_ARGS);
                 if (argc == -1) {
-                    print("Error parsing command: too many arguments\n");
+                    perror("Error parsing command: too many arguments\n");
                     exit(EXIT_FAILURE);
                 }
                 execvp(args[0], args);
