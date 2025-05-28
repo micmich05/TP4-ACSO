@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define MAX_PROCESSES 1000
+#define MAX_PROCESSES 120
+
 int main(int argc, char **argv)
 {
     int start, status, pid, n;
