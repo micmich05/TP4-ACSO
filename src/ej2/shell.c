@@ -74,7 +74,7 @@
 #include <string.h>
 
 #define MAX_COMMANDS 200
-#define MAX_ARGS     50 //Puedo asumir esto?
+#define MAX_ARGS     64 //Puedo asumir esto?
 
 int parse_args(char *cmd, char **args, int max_args) {
     int argc = 0;
@@ -105,6 +105,16 @@ int parse_args(char *cmd, char **args, int max_args) {
         }
         argc++;
     }
+    // Verificar si hay más argumentos después de alcanzar el límite
+    if (argc == max_args - 1) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p) {
+            // Hay más argumentos, excede el límite
+            printf("Too many arguments\n");
+            return -1;
+        }
+    }
+    
     args[argc] = NULL;
     return argc;
 }
