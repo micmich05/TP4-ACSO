@@ -141,7 +141,7 @@ int main() {
         int pipes[N-1][2]; // Cree N-1 pipes en N comandos en vez de 1 solo en el padre
         for (int i = 0; i < N-1; i++) {
             if (pipe(pipes[i]) == -1) {
-                perror("Error al crear pipe");
+                perror("Error creating pipes");
                 for (int j = 0; j < i; j++) { // Cerrar pipes ya creados
                     close(pipes[j][0]);
                     close(pipes[j][1]);
@@ -150,12 +150,11 @@ int main() {
             }
         }
 
-        // Necesito un fork y execvp por cada comando
         pid_t pids[N];
         for (int i = 0; i < N; i++) {
             pid_t pid = fork();
             if (pid < 0) {
-                perror("Error al hacer fork");
+                perror("Error executing fork");
                 exit(EXIT_FAILURE);
             }
 
@@ -207,7 +206,7 @@ int main() {
                 parse_args(commands[i], args, MAX_ARGS);
 
                 execvp(args[0], args);
-                perror("Comando no encontrado");
+                perror("Error executing command");
                 exit(EXIT_FAILURE);
             }
             
