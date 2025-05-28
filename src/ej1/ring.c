@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define MAX_PROCESSES 120
+#define MAX_PROCESSES 123
 #define MAX_C 2000000
 
 int main(int argc, char **argv)
