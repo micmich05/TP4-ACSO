@@ -109,8 +109,6 @@ int parse_args(char *cmd, char **args, int max_args) {
     if (argc == max_args - 1) {
         while (*p == ' ' || *p == '\t') p++;
         if (*p) {
-            // Hay más argumentos, excede el límite
-            printf("Too many arguments\n");
             return -1;
         }
     }
@@ -213,8 +211,11 @@ int main() {
 
                 // Reemplazar el tokenizado simple con la función que maneja comillas
                 char *args[MAX_ARGS];
-                parse_args(commands[i], args, MAX_ARGS);
-
+                int argc =parse_args(commands[i], args, MAX_ARGS);
+                if (argc == -1) {
+                    print("Error parsing command: too many arguments\n");
+                    exit(EXIT_FAILURE);
+                }
                 execvp(args[0], args);
                 perror("Error executing command");
                 exit(EXIT_FAILURE);
