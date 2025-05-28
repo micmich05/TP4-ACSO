@@ -41,7 +41,7 @@ run_test() {
     output=$($RING $n $c $s 2>&1)
     
     # Check for errors in the output
-    if echo "$output" | grep -q "Entradas inválidas\|Error\|error"; then
+    if echo "$output" | grep -q "Entradas inválidas\|Número de procesos excede el máximo permitido\|Error\|error"; then
         echo -e "${RED}Failed - Invalid inputs or error${NC}"
         echo "$output"
         return 1
@@ -75,7 +75,7 @@ run_error_test() {
     output=$($RING $n $c $s 2>&1)
     
     # Check if we got an error message as expected
-    if echo "$output" | grep -q "Entradas inválidas\|Error\|error"; then
+    if echo "$output" | grep -q "Entradas inválidas\|Número de procesos excede el máximo permitido"; then
         echo -e "${GREEN}Passed - Error detected as expected${NC}"
         return 0
     else
@@ -156,14 +156,14 @@ passed=0
 passed_errors=0
 passed_memory=0
 passed_pipes=0
-total=20
-total_errors=6
+total=25
+total_errors=8
 
 echo -e "${BLUE}=============================================${NC}"
 echo -e "${BLUE}Running basic functionality tests for ring program...${NC}"
 echo -e "${BLUE}=============================================${NC}"
 
-# Run the standard tests
+# Basic functionality tests
 run_test 1 3 0 1
 [ $? -eq 0 ] && ((passed++))
 
@@ -209,20 +209,34 @@ run_test 14 20 0 10
 run_test 15 50 0 25
 [ $? -eq 0 ] && ((passed++))
 
-# Additional tests
 run_test 16 100 0 50
 [ $? -eq 0 ] && ((passed++))
 
-run_test 17 3 2147483647 1  # Test with INT_MAX
+run_test 17 120 0 60  # Maximum allowed processes
 [ $? -eq 0 ] && ((passed++))
 
-run_test 18 3 -2147483648 1  # Test with INT_MIN
+run_test 18 3 2147483647 1  # Test with INT_MAX
 [ $? -eq 0 ] && ((passed++))
 
-run_test 19 999 0 500  # Test with n close to MAX_PROCESSES
+run_test 19 3 -2147483648 1  # Test with INT_MIN
 [ $? -eq 0 ] && ((passed++))
 
-run_test 20 50 50 25  # All numbers are positive and equal
+run_test 20 50 50 25
+[ $? -eq 0 ] && ((passed++))
+
+run_test 21 7 0 4
+[ $? -eq 0 ] && ((passed++))
+
+run_test 22 15 100 8
+[ $? -eq 0 ] && ((passed++))
+
+run_test 23 30 -500 15
+[ $? -eq 0 ] && ((passed++))
+
+run_test 24 25 0 1
+[ $? -eq 0 ] && ((passed++))
+
+run_test 25 25 0 25
 [ $? -eq 0 ] && ((passed++))
 
 # Display functionality test summary
@@ -246,11 +260,17 @@ run_error_test 3 10 0 0 "start <= 0"
 run_error_test 4 10 0 -1 "negative start"
 [ $? -eq 0 ] && ((passed_errors++))
 
-run_error_test 5 1001 0 1 "n > MAX_PROCESSES (1000)"
+run_error_test 5 121 0 1 "n > MAX_PROCESSES (120)"
+[ $? -eq 0 ] && ((passed_errors++))
+
+run_error_test 6 200 0 1 "n > MAX_PROCESSES (120)"
+[ $? -eq 0 ] && ((passed_errors++))
+
+run_error_test 7 1 0 1 "n < 3"
 [ $? -eq 0 ] && ((passed_errors++))
 
 # Test with invalid arguments
-echo "Error Test 6: Invalid arguments (too few arguments)"
+echo "Error Test 8: Invalid arguments (too few arguments)"
 output=$($RING 5 10 2>/dev/null)
 if [ $? -ne 0 ]; then
     echo -e "${GREEN}Passed - Error detected as expected${NC}"
@@ -277,12 +297,15 @@ check_memory_leaks 5 0 3
 check_memory_leaks 10 0 5
 [ $? -eq 0 ] && ((passed_memory++))
 
-check_memory_leaks 50 0 25  # Test with more processes
+check_memory_leaks 25 0 12
+[ $? -eq 0 ] && ((passed_memory++))
+
+check_memory_leaks 50 0 25
 [ $? -eq 0 ] && ((passed_memory++))
 
 # Display memory leak test summary
 echo ""
-echo "Memory leak test summary: $passed_memory out of 4 tests passed"
+echo "Memory leak test summary: $passed_memory out of 5 tests passed"
 
 # Run pipe leak checks
 echo -e "${BLUE}=============================================${NC}"
@@ -298,22 +321,25 @@ check_pipe_leaks 5 0 3
 check_pipe_leaks 10 0 5
 [ $? -eq 0 ] && ((passed_pipes++))
 
-check_pipe_leaks 50 0 25  # Test with more processes
+check_pipe_leaks 25 0 12
+[ $? -eq 0 ] && ((passed_pipes++))
+
+check_pipe_leaks 50 0 25
 [ $? -eq 0 ] && ((passed_pipes++))
 
 # Display pipe leak test summary
 echo ""
-echo "Pipe leak test summary: $passed_pipes out of 4 tests passed"
+echo "Pipe leak test summary: $passed_pipes out of 5 tests passed"
 
 # Final summary
 echo -e "${BLUE}=============================================${NC}"
 echo -e "${BLUE}Overall summary:${NC}"
 echo "- Functionality: $passed/$total"
 echo "- Error handling: $passed_errors/$total_errors"  
-echo "- Memory leaks: $passed_memory/4"
-echo "- Pipe leaks: $passed_pipes/4"
+echo "- Memory leaks: $passed_memory/5"
+echo "- Pipe leaks: $passed_pipes/5"
 
-if [ $passed -eq $total ] && [ $passed_memory -eq 4 ] && [ $passed_pipes -eq 4 ] && [ $passed_errors -eq $total_errors ]; then
+if [ $passed -eq $total ] && [ $passed_memory -eq 5 ] && [ $passed_pipes -eq 5 ] && [ $passed_errors -eq $total_errors ]; then
     echo -e "${GREEN}All tests passed!${NC}"
     exit 0
 else
