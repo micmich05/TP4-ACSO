@@ -245,9 +245,8 @@ int main(int argc, char **argv)
 
     int total = n + 1; // padre + n hijos
     // matriz de pipes: pipes[i] conecta ring_procs[i] -> ring_procs[(i+1)%(n+1)]
-    int (*pipes)[2] = malloc(sizeof(int[2]) * total);
-    if (!pipes) {perror("malloc"); exit(EXIT_FAILURE); }
-
+    
+    int pipes[total][2];    
     for (int i = 0; i < total; ++i) {
         if (pipe(pipes[i]) == -1) {
             perror("pipe");
