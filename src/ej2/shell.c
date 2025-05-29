@@ -7,12 +7,11 @@
 #define MAX_COMMANDS 200
 #define MAX_ARGS     101 // 100 arguments + NULL
 
+// prepara los argumentos (args) para execvp de un comando (cmd).
+// el comando puede contener argumentos entre comillas.
+// devuelve -1 si hay demasiados argumentos.
+
 int parse_args(char *cmd, char **args) {
-    """
-    Prepara los argumentos (args) para execvp de un comando (cmd).
-    El comando puede contener argumentos entre comillas.
-    Devuelve -1 si hay demasiados argumentos.
-    """
 
     int argc = 0;
     char *p = cmd;
@@ -122,7 +121,7 @@ int main() {
                 //preparo los argumentos para execvp (la funcion parse_args maneja el caso de comillas) y 
                 //devuelve -1 si hay demasiados argumentos
                 char *args[MAX_ARGS];
-                int argc = parse_args(commands[i], args, MAX_ARGS);
+                int argc = parse_args(commands[i], args);
                 if (argc == -1) {
                     fprintf(stderr, "Error: too many arguments\n");
                     exit(EXIT_FAILURE);
