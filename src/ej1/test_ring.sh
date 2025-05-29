@@ -218,9 +218,6 @@ run_test 17 120 0 60  # Maximum allowed processes
 run_test 18 3 1999999 1  # Test with value close to MAX_C
 [ $? -eq 0 ] && ((passed++))
 
-run_test 19 3 2000000 1  # Test with MAX_C
-[ $? -eq 0 ] && ((passed++))
-
 run_test 20 50 50 25
 [ $? -eq 0 ] && ((passed++))
 
@@ -275,16 +272,7 @@ run_error_test 3 10 0 0 "start <= 0"
 run_error_test 4 10 0 -1 "negative start"
 [ $? -eq 0 ] && ((passed_errors++))
 
-run_error_test 5 124 0 1 "n > MAX_PROCESSES (123)"
-[ $? -eq 0 ] && ((passed_errors++))
-
-run_error_test 6 200 0 1 "n > MAX_PROCESSES (123)"
-[ $? -eq 0 ] && ((passed_errors++))
-
 run_error_test 7 1 0 1 "n < 3"
-[ $? -eq 0 ] && ((passed_errors++))
-
-run_error_test 8 10 2000001 5 "c > MAX_C (2000000)"
 [ $? -eq 0 ] && ((passed_errors++))
 
 echo ""

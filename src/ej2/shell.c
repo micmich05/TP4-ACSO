@@ -8,17 +8,22 @@
 #define MAX_ARGS     101 // 100 arguments + NULL
 
 int parse_args(char *cmd, char **args, int max_args) {
+    """
+    Recibe un comando y prepara los argumentos para execvp.
+    El comando puede contener argumentos entre comillas.
+    Devuelve -1 si hay demasiados argumentos.
+    """
+    
     int argc = 0;
     char *p = cmd;
     
-    while (*p && argc < max_args - 1) {  // Reservar espacio para NULL
-        // Saltar espacios
+    while (*p && argc < max_args - 1) {  
         while (*p == ' ' || *p == '\t') p++;
         if (!*p) break;
         
         if (*p == '"') {
-            // Argumento entre comillas
-            p++; // saltar comilla inicial
+            //caso en que el argumento está entre comillas
+            p++; //saltar comilla inicial
             args[argc] = p;
             while (*p && *p != '"') p++;
             if (*p == '"') {
@@ -26,7 +31,7 @@ int parse_args(char *cmd, char **args, int max_args) {
                 p++;
             }
         } else {
-            // Argumento normal
+            //caso en que el argumento no está entre comillas
             args[argc] = p;
             while (*p && *p != ' ' && *p != '\t') p++;
             if (*p) {
@@ -65,7 +70,6 @@ int main() {
         command_count = 0;
         char *tok = strtok(command, "|");
         while (tok && command_count < MAX_COMMANDS) {
-            // trim espacios inicio/fin
             while (*tok == ' ') tok++;
             char *end = tok + strlen(tok) - 1;
             while (end > tok && *end == ' ') *end-- = '\0';
@@ -77,11 +81,11 @@ int main() {
         if (command_count == 0) continue;
 
         int N = command_count;
-        int pipes[N-1][2]; // Cree N-1 pipes en N comandos en vez de 1 solo en el padre
+        int pipes[N-1][2]; //creo los pipes necesarios (N-1 pipes para N comandos)
         for (int i = 0; i < N-1; i++) {
             if (pipe(pipes[i]) == -1) {
                 perror("Error creating pipes");
-                for (int j = 0; j < i; j++) { // Cerrar pipes ya creados
+                for (int j = 0; j < i; j++) { //cierro pipes ya fueron creados
                     close(pipes[j][0]);
                     close(pipes[j][1]);
                 }
@@ -91,29 +95,31 @@ int main() {
 
         pid_t pids[N];
         for (int i = 0; i < N; i++) {
-            pid_t pid = fork();
+            pid_t pid = fork(); //creo un hijo para cada comando
             if (pid < 0) {
                 perror("Error executing fork");
                 exit(EXIT_FAILURE);
             }
 
             if (pid == 0) {
-                // --- en el hijo: redirijo stdin/stdout según posición ---
-                if (i > 0) {
+                //redirijo la entrada/salida según corresponda
+                if (i > 0) { //si no es el primer comando
                     dup2(pipes[i-1][0], STDIN_FILENO);
                 }
-                if (i < N-1) {
+                if (i < N-1) { //si no es el último comando
                     dup2(pipes[i][1], STDOUT_FILENO);
                 }
-                // cierro todas las copias de los pipes en el hijo
+                //cierro todas las copias de los pipes
                 for (int j = 0; j < N-1; j++) {
                     close(pipes[j][0]);
                     close(pipes[j][1]);
                 }
 
-                // Reemplazar el tokenizado simple con la función que maneja comillas
+                //preparo los argumentos para execvp (la funcion parse_args maneja el caso de comillas) y 
+                //devuelve -1 si hay demasiados argumentos
+
                 char *args[MAX_ARGS];
-                int argc =parse_args(commands[i], args, MAX_ARGS);
+                int argc = parse_args(commands[i], args, MAX_ARGS);
                 if (argc == -1) {
                     fprintf(stderr, "Error: too many arguments\n");
                     exit(EXIT_FAILURE);
@@ -126,13 +132,13 @@ int main() {
             pids[i] = pid;
         }
 
-        // Cerrar TODOS los pipes en el padre después de crear todos los procesos
+        //cierro los pipes en el padre
         for (int i = 0; i < N-1; i++) {
             close(pipes[i][0]);
             close(pipes[i][1]);
         }
 
-        // Esperar a que terminen todos los hijos
+        //espero a que terminen todos los hijos
         for (int i = 0; i < N; i++) {
             waitpid(pids[i], NULL, 0);
         }
