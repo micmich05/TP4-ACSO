@@ -7,17 +7,17 @@
 #define MAX_COMMANDS 200
 #define MAX_ARGS     101 // 100 arguments + NULL
 
-int parse_args(char *cmd, char **args, int max_args) {
+int parse_args(char *cmd, char **args) {
     """
-    Recibe un comando y prepara los argumentos para execvp.
+    Prepara los argumentos (args) para execvp de un comando (cmd).
     El comando puede contener argumentos entre comillas.
     Devuelve -1 si hay demasiados argumentos.
     """
-    
+
     int argc = 0;
     char *p = cmd;
     
-    while (*p && argc < max_args - 1) {  
+    while (*p && argc < MAX_ARGS - 1) {  
         while (*p == ' ' || *p == '\t') p++;
         if (!*p) break;
         
@@ -42,11 +42,15 @@ int parse_args(char *cmd, char **args, int max_args) {
         argc++;
     }
     
-    // Verificar si hay más argumentos después de alcanzar el límite
-    while (*p == ' ' || *p == '\t') p++;
-    if (*p) {
-        // Hay más argumentos, excede el límite
-        return -1;
+    //caso borde de si tiene mas args que el limite (MAX_ARGS - 1)
+    // while (*p == ' ' || *p == '\t') p++;
+    // if (*p) {
+    //     // Hay más argumentos, excede el límite
+    //     return -1;
+    // }
+
+    if (argc >= MAX_ARGS) {
+        return -1; //demasiados argumentos
     }
     
     args[argc] = NULL;
@@ -117,7 +121,6 @@ int main() {
 
                 //preparo los argumentos para execvp (la funcion parse_args maneja el caso de comillas) y 
                 //devuelve -1 si hay demasiados argumentos
-
                 char *args[MAX_ARGS];
                 int argc = parse_args(commands[i], args, MAX_ARGS);
                 if (argc == -1) {
