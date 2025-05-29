@@ -14,9 +14,9 @@ int main(int argc, char **argv)
         exit(0);
     }
     /* Parsing de argumentos */
-    n        = atoi(argv[1]);   //número de hijos
+    n = atoi(argv[1]);   //número de hijos
     buffer[0] = atoi(argv[2]);  //valor inicial
-    start    = atoi(argv[3]);   //índice del hijo que arranca
+    start = atoi(argv[3]);   //índice del hijo que arranca
 
     if (n < 3 || start > n || start <= 0) {
         printf("Entradas inválidas\n");
