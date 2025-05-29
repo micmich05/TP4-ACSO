@@ -192,10 +192,13 @@ run_test 17 120 0 60  # Maximum allowed processes
 run_test 18 3 1999999 1  # Test with value close to MAX_C
 [ $? -eq 0 ] && ((passed++))
 
+run_test 19 10 -100 7
+[ $? -eq 0 ] && ((passed++))
+
 run_test 20 50 50 25
 [ $? -eq 0 ] && ((passed++))
 
-run_test 21 7 0 4
+run_test 21 100 51 99
 [ $? -eq 0 ] && ((passed++))
 
 run_test 22 15 100 8
