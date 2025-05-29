@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define MAX_COMMANDS 200
-#define MAX_ARGS     65 // 64 arguments + NULL
+#define MAX_ARGS     101 // 100 arguments + NULL
 
 int parse_args(char *cmd, char **args, int max_args) {
     int argc = 0;
@@ -49,7 +49,7 @@ int parse_args(char *cmd, char **args, int max_args) {
 }
 
 int main() {
-    //Puedo asumir esto?
+
     char command[256];
     char *commands[MAX_COMMANDS];
     int command_count;
