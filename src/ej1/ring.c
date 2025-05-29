@@ -14,9 +14,9 @@ int main(int argc, char **argv)
         exit(0);
     }
     /* Parsing de argumentos */
-    n        = atoi(argv[1]);   // número de hijos
-    buffer[0] = atoi(argv[2]);  // valor inicial a transmitir
-    start    = atoi(argv[3]);   // índice del hijo que arranca
+    n        = atoi(argv[1]);   //número de hijos
+    buffer[0] = atoi(argv[2]);  //valor inicial
+    start    = atoi(argv[3]);   //índice del hijo que arranca
 
     if (n < 3 || start > n || start <= 0) {
         printf("Entradas inválidas\n");
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i\n",
            n, buffer[0], start);
 
-    int total = n + 1; // padre + n hijos    
+    int total = n + 1; //padre + n hijos    
     int pipes[total][2];    
     for (int i = 0; i < total; ++i) {
         if (pipe(pipes[i]) == -1) {
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
             myid = i;  // en el hijo, guardo su índice
             break;
         }
-        // el padre sigue creando más hijos
+        //el padre sigue creando hijos
     }
     
     int ring_idx;
@@ -61,13 +61,13 @@ int main(int argc, char **argv)
     //cierro pipes que no necesito
     for (int i = 0; i < total; ++i) {
         if (i == ring_idx) {
-            // mi pipe de salida: me quedo con [1], cierro [0]
+            //mi pipe de salida: me quedo con [1], cierro [0]
             close(pipes[i][0]);
         } else if (i == (ring_idx - 1 + total) % total) {
-            // mi pipe de entrada: me quedo con [0], cierro [1]
+            //mi pipe de entrada: me quedo con [0], cierro [1]
             close(pipes[i][1]);
         } else {
-            // cierro ambos extremos
+            //cierro ambos extremos
             close(pipes[i][0]);
             close(pipes[i][1]);
         }
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
         write(pipes[0][1], &buffer[0], sizeof(buffer[0]));
         close(pipes[0][1]);
 
-        int result; // recibo el resultado final
+        int result; //recibo el resultado final
         read(pipes[total-1][0], &result, sizeof(result));
         close(pipes[total-1][0]);
 
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
         read(pipes[prev][0], &recv, sizeof(recv));
         close(pipes[prev][0]);
 
-        recv++;  // incremento y paso al siguiente
+        recv++;  //incremento y paso al siguiente
         write(pipes[ring_idx][1], &recv, sizeof(recv));
         close(pipes[ring_idx][1]);
 
