@@ -64,12 +64,28 @@ int main() {
     while (1) {
 
         printf("Shell> ");
-        fflush(stdout);
-        if (!fgets(command, sizeof(command), stdin))
-            break;  
-        command[strcspn(command, "\n")] = '\0';
+        // fflush(stdout);
+        // if (!fgets(command, sizeof(command), stdin))
+        //     break;  
+        
+        /*Reads a line of input from the user from the standard input (stdin) and stores it in the variable command */
+        fgets(command, sizeof(command), stdin);
 
+        /* Removes the newline character (\n) from the end of the string stored in command, if present. 
+           This is done by replacing the newline character with the null character ('\0').
+           The strcspn() function returns the length of the initial segment of command that consists of 
+           characters not in the string specified in the second argument ("\n" in this case). */
+        command[strcspn(command, "\n")] = '\0';
+        
+         /* Tokenizes the command string using the pipe character (|) as a delimiter using the strtok() function. 
+           Each resulting token is stored in the commands[] array. 
+           The strtok() function breaks the command string into tokens (substrings) separated by the pipe character |. 
+           In each iteration of the while loop, strtok() returns the next token found in command. 
+           The tokens are stored in the commands[] array, and command_count is incremented to keep track of the number of tokens found. */
+        
+        //modifique un poco el codigo para que no se rompa con mas del limite de comandos y saco algunos espacios al principio y final
         command_count = 0;
+
         char *tok = strtok(command, "|");
         while (tok && command_count < MAX_COMMANDS) {
             while (*tok == ' ') tok++;
