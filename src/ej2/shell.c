@@ -96,8 +96,13 @@ int main() {
             tok = strtok(NULL, "|");
         }
 
-        if (command_count == 0) continue;
-
+        //if (command_count == 0) continue;
+        /* You should start programming from here... */
+        // for (int i = 0; i < command_count; i++) 
+        // {
+        //     printf("Command %d: %s\n", i, commands[i]);
+        // }   
+        
         int N = command_count;
         int pipes[N-1][2]; //creo los pipes necesarios (N-1 pipes para N comandos)
         for (int i = 0; i < N-1; i++) {
