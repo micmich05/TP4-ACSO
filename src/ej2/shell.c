@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define MAX_COMMANDS 200
-#define MAX_ARGS     101 // 100 arguments + NULL
+#define MAX_ARGS 101 // 100 arguments + NULL
 
 // prepara los argumentos (args) para execvp de un comando (cmd).
 // el comando puede contener argumentos entre comillas.
@@ -60,11 +60,12 @@ int parse_args(char *cmd, char **args) {
     char *p = cmd;
     
     while (*p && argc < MAX_ARGS - 1) {  
+        
         while (*p == ' ' || *p == '\t') p++;
         if (!*p) break;
         
-        if (*p == '"' || *p == '\'') {  // Manejar ambas comillas
-            char quote = *p;  // Recordar qué tipo de comilla
+        if (*p == '"' || *p == '\'') {  // manejar ambas comillas
+            char quote = *p;  
             p++; // saltar comilla inicial
             args[argc] = p;
             while (*p && *p != quote) p++;  // Buscar la comilla de cierre
