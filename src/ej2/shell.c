@@ -92,6 +92,10 @@ int parse_args(char *cmd, char **args) {
     int in_quote = 0;
     char quote_char = 0;
     
+    // Skip leading whitespace
+    while (*p == ' ' || *p == '\t') p++;
+    if (!*p) return 0;
+    
     // Start by pointing to the beginning of the command
     args[argc] = p;
     
@@ -130,6 +134,7 @@ int parse_args(char *cmd, char **args) {
         return -1;
     }
     
+    // This was incorrect: args[argc + 1] = NULL;
     args[argc + 1] = NULL;
     return argc + 1;
 }
