@@ -134,8 +134,10 @@ int parse_args(char *cmd, char **args) {
         return -1;
     }
     
-    // This was incorrect: args[argc + 1] = NULL;
+    // Fix: Properly NULL terminate the argument list
     args[argc + 1] = NULL;
+    
+    // Fix: Return the correct count (including the command itself)
     return argc + 1;
 }
 
