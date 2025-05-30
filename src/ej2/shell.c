@@ -11,6 +11,50 @@
 // el comando puede contener argumentos entre comillas.
 // devuelve -1 si hay demasiados argumentos.
 
+// int parse_args(char *cmd, char **args) {
+//     int argc = 0;
+//     char *p = cmd;
+    
+//     while (*p && argc < MAX_ARGS - 1) {  
+//         while (*p == ' ' || *p == '\t') p++;
+//         if (!*p) break;
+        
+//         if (*p == '"') {
+//             //caso en que el argumento está entre comillas
+//             p++; //saltar comilla inicial
+//             args[argc] = p;
+//             while (*p && *p != '"') p++;
+//             if (*p == '"') {
+//                 *p = '\0';
+//                 p++;
+//             }
+//         } else {
+//             //caso en que el argumento no está entre comillas
+//             args[argc] = p;
+//             while (*p && *p != ' ' && *p != '\t') p++;
+//             if (*p) {
+//                 *p = '\0';
+//                 p++;
+//             }
+//         }
+//         argc++;
+//     }
+    
+//     //caso borde de si tiene mas args que el limite (MAX_ARGS - 1)
+//     // while (*p == ' ' || *p == '\t') p++;
+//     // if (*p) {
+//     //     // Hay más argumentos, excede el límite
+//     //     return -1;
+//     // }
+
+//     if (argc >= MAX_ARGS) {
+//         return -1; //demasiados argumentos
+//     }
+    
+//     args[argc] = NULL;
+//     return argc;
+// }
+
 int parse_args(char *cmd, char **args) {
     int argc = 0;
     char *p = cmd;
@@ -19,17 +63,17 @@ int parse_args(char *cmd, char **args) {
         while (*p == ' ' || *p == '\t') p++;
         if (!*p) break;
         
-        if (*p == '"') {
-            //caso en que el argumento está entre comillas
-            p++; //saltar comilla inicial
+        if (*p == '"' || *p == '\'') {  // Manejar ambas comillas
+            char quote = *p;  // Recordar qué tipo de comilla
+            p++; // saltar comilla inicial
             args[argc] = p;
-            while (*p && *p != '"') p++;
-            if (*p == '"') {
+            while (*p && *p != quote) p++;  // Buscar la comilla de cierre
+            if (*p == quote) {
                 *p = '\0';
                 p++;
             }
         } else {
-            //caso en que el argumento no está entre comillas
+            // caso en que el argumento no está entre comillas
             args[argc] = p;
             while (*p && *p != ' ' && *p != '\t') p++;
             if (*p) {
@@ -40,15 +84,8 @@ int parse_args(char *cmd, char **args) {
         argc++;
     }
     
-    //caso borde de si tiene mas args que el limite (MAX_ARGS - 1)
-    // while (*p == ' ' || *p == '\t') p++;
-    // if (*p) {
-    //     // Hay más argumentos, excede el límite
-    //     return -1;
-    // }
-
     if (argc >= MAX_ARGS) {
-        return -1; //demasiados argumentos
+        return -1;
     }
     
     args[argc] = NULL;
