@@ -7,12 +7,49 @@
 #define MAX_COMMANDS 200
 #define MAX_ARGS 101 // 100 arguments + NULL
 
+// int parse_args(char *cmd, char **args) {
+//     int argc = 0;
+//     char *p = cmd;
+    
+//     while (*p && argc < MAX_ARGS - 1) {  
+
+//         while (*p == ' ' || *p == '\t') p++;
+//         if (!*p) break;
+        
+//         if (*p == '"' || *p == '\'') {  //manejar ambas comillas
+//             char quote = *p;  
+//             p++; //saltar comilla inicial
+//             args[argc] = p;
+//             while (*p && *p != quote) p++;  //comilla de cierre
+//             if (*p == quote) {
+//                 *p = '\0';
+//                 p++;
+//             }
+//         } else {
+//             //caso en que el argumento no está entre comillas
+//             args[argc] = p;
+//             while (*p && *p != ' ' && *p != '\t') p++;
+//             if (*p) {
+//                 *p = '\0';
+//                 p++;
+//             }
+//         }
+//         argc++;
+//     }
+    
+//     if (argc >= MAX_ARGS) {
+//         return -1;
+//     }
+    
+//     args[argc] = NULL;
+//     return argc;
+// }
+
 int parse_args(char *cmd, char **args) {
     int argc = 0;
     char *p = cmd;
     
     while (*p && argc < MAX_ARGS - 1) {  
-
         while (*p == ' ' || *p == '\t') p++;
         if (!*p) break;
         
@@ -20,7 +57,12 @@ int parse_args(char *cmd, char **args) {
             char quote = *p;  
             p++; //saltar comilla inicial
             args[argc] = p;
-            while (*p && *p != quote) p++;  //comilla de cierre
+            
+            // Preservar contenido dentro de comillas SIN procesar escapes
+            while (*p && *p != quote) {
+                p++;
+            }
+            
             if (*p == quote) {
                 *p = '\0';
                 p++;
