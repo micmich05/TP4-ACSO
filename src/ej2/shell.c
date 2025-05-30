@@ -45,46 +45,93 @@
 //     return argc;
 // }
 
+// int parse_args(char *cmd, char **args) {
+//     int argc = 0;
+//     char *p = cmd;
+    
+//     while (*p && argc < MAX_ARGS - 1) {  
+//         while (*p == ' ' || *p == '\t') p++;
+//         if (!*p) break;
+        
+//         if (*p == '"' || *p == '\'') {  //manejar ambas comillas
+//             char quote = *p;  
+//             p++; //saltar comilla inicial
+//             args[argc] = p;
+            
+//             // Preservar contenido dentro de comillas SIN procesar escapes
+//             while (*p && *p != quote) {
+//                 p++;
+//             }
+            
+//             if (*p == quote) {
+//                 *p = '\0';
+//                 p++;
+//             }
+//         } else {
+//             //caso en que el argumento no está entre comillas
+//             args[argc] = p;
+//             while (*p && *p != ' ' && *p != '\t') p++;
+//             if (*p) {
+//                 *p = '\0';
+//                 p++;
+//             }
+//         }
+//         argc++;
+//     }
+    
+//     if (argc >= MAX_ARGS) {
+//         return -1;
+//     }
+    
+//     args[argc] = NULL;
+//     return argc;
+// }
 int parse_args(char *cmd, char **args) {
     int argc = 0;
     char *p = cmd;
+    int in_quote = 0;
+    char quote_char = 0;
     
-    while (*p && argc < MAX_ARGS - 1) {  
-        while (*p == ' ' || *p == '\t') p++;
-        if (!*p) break;
-        
-        if (*p == '"' || *p == '\'') {  //manejar ambas comillas
-            char quote = *p;  
-            p++; //saltar comilla inicial
-            args[argc] = p;
+    // Start by pointing to the beginning of the command
+    args[argc] = p;
+    
+    while (*p && argc < MAX_ARGS - 1) {
+        if (!in_quote && (*p == ' ' || *p == '\t')) {
+            // End the current argument
+            *p = '\0';
+            p++;
             
-            // Preservar contenido dentro de comillas SIN procesar escapes
-            while (*p && *p != quote) {
-                p++;
-            }
+            // Skip additional spaces
+            while (*p == ' ' || *p == '\t') p++;
+            if (!*p) break;
             
-            if (*p == quote) {
-                *p = '\0';
-                p++;
-            }
+            // Start a new argument
+            args[++argc] = p;
+        } else if (!in_quote && (*p == '"' || *p == '\'')) {
+            // Found opening quote
+            in_quote = 1;
+            quote_char = *p;
+            
+            // Remove the opening quote by shifting the rest of the string
+            memmove(p, p + 1, strlen(p));
+        } else if (in_quote && *p == quote_char) {
+            // Found closing quote
+            in_quote = 0;
+            
+            // Remove the closing quote by replacing it with null and moving past it
+            memmove(p, p + 1, strlen(p));
         } else {
-            //caso en que el argumento no está entre comillas
-            args[argc] = p;
-            while (*p && *p != ' ' && *p != '\t') p++;
-            if (*p) {
-                *p = '\0';
-                p++;
-            }
+            // Regular character, just move to next
+            p++;
         }
-        argc++;
     }
     
     if (argc >= MAX_ARGS) {
         return -1;
     }
     
-    args[argc] = NULL;
-    return argc;
+    args[argc + 1] = NULL;
+    return argc + 1;
 }
 
 int main() {
