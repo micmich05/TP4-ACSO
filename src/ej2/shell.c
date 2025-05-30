@@ -112,7 +112,7 @@ int main() {
            In each iteration of the while loop, strtok() returns the next token found in command. 
            The tokens are stored in the commands[] array, and command_count is incremented to keep track of the number of tokens found. */
         
-        //modifique un poco el codigo para que no se rompa con mas del limite de comandos y saco algunos espacios al principio y final
+        //modifique un poco el codigo para espacios al principio y final
         command_count = 0;
 
         char *tok = strtok(command, "|");
