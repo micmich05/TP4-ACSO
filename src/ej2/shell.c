@@ -93,7 +93,6 @@ int main() {
     int command_count;
 
     while (1) {
-
         printf("Shell> ");
         
         /*Reads a line of input from the user from the standard input (stdin) and stores it in the variable command */
