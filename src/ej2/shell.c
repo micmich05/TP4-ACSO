@@ -88,7 +88,6 @@ int parse_args(char *cmd, char **args) {
 }
 
 int main() {
-
     char command[256];
     char *commands[MAX_COMMANDS];
     int command_count;
