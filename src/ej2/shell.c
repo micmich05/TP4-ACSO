@@ -45,147 +45,46 @@
 //     return argc;
 // }
 
-// int parse_args(char *cmd, char **args) {
-//     int argc = 0;
-//     char *p = cmd;
-    
-//     while (*p && argc < MAX_ARGS - 1) {  
-//         while (*p == ' ' || *p == '\t') p++;
-//         if (!*p) break;
-        
-//         if (*p == '"' || *p == '\'') {  //manejar ambas comillas
-//             char quote = *p;  
-//             p++; //saltar comilla inicial
-//             args[argc] = p;
-            
-//             // Preservar contenido dentro de comillas SIN procesar escapes
-//             while (*p && *p != quote) {
-//                 p++;
-//             }
-            
-//             if (*p == quote) {
-//                 *p = '\0';
-//                 p++;
-//             }
-//         } else {
-//             //caso en que el argumento no está entre comillas
-//             args[argc] = p;
-//             while (*p && *p != ' ' && *p != '\t') p++;
-//             if (*p) {
-//                 *p = '\0';
-//                 p++;
-//             }
-//         }
-//         argc++;
-//     }
-    
-//     if (argc >= MAX_ARGS) {
-//         return -1;
-//     }
-    
-//     args[argc] = NULL;
-//     return argc;
-// }
-// Divide `line` en comandos separados por '|' que NO estén entre comillas.
-// Devuelve la cantidad de comandos y llena commands[0..count-1].
-
-int split_commands(char *line, char **commands) {
-    int count = 0;
-    char *start = line;
-    int in_quote = 0;
-    char quote_char = 0;
-    char *p = line;
-
-    while (*p) {
-        if (!in_quote && (*p == '"' || *p == '\'')) {
-            // Abrimos comillas
-            in_quote    = 1;
-            quote_char  = *p;
-        }
-        else if ( in_quote && *p == quote_char) {
-            // Cerramos comillas
-            in_quote = 0;
-        }
-        else if (!in_quote && *p == '|') {
-            // Encontramos una tubería fuera de comillas → cortamos
-            *p = '\0';
-
-            // Trim espacios al inicio
-            char *cmd = start;
-            while (*cmd == ' ' || *cmd == '\t') cmd++;
-            // Trim espacios al final
-            char *end = cmd + strlen(cmd) - 1;
-            while (end > cmd && (*end == ' ' || *end == '\t')) {
-                *end = '\0';
-                end--;
-            }
-
-            commands[count++] = cmd;
-            start = p + 1;
-        }
-        p++;
-    }
-
-    // Resto después de la última tubería
-    char *cmd = start;
-    while (*cmd == ' ' || *cmd == '\t') cmd++;
-    char *end = cmd + strlen(cmd) - 1;
-    while (end > cmd && (*end == ' ' || *end == '\t')) {
-        *end = '\0';
-        end--;
-    }
-    commands[count++] = cmd;
-
-    return count;
-}
-
-
 int parse_args(char *cmd, char **args) {
     int argc = 0;
     char *p = cmd;
-    int in_quote = 0;
-    char quote_char = 0;
-
-    // Skip leading whitespace
-    while (*p == ' ' || *p == '\t') p++;
-    if (!*p) return 0;
-
-    // Start first argument
-    args[argc] = p;
-
-    while (*p && argc < MAX_ARGS - 1) {
-        if (!in_quote && (*p == ' ' || *p == '\t')) {
-            // End current arg
-            *p = '\0';
-            p++;
-            // Skip additional spaces
-            while (*p == ' ' || *p == '\t') p++;
-            if (!*p) break;
-            // Start new arg
-            args[++argc] = p;
+    
+    while (*p && argc < MAX_ARGS - 1) {  
+        while (*p == ' ' || *p == '\t') p++;
+        if (!*p) break;
+        
+        if (*p == '"' || *p == '\'') {  //manejar ambas comillas
+            char quote = *p;  
+            p++; //saltar comilla inicial
+            args[argc] = p;
+            
+            // Preservar contenido dentro de comillas SIN procesar escapes
+            while (*p && *p != quote) {
+                p++;
+            }
+            
+            if (*p == quote) {
+                *p = '\0';
+                p++;
+            }
+        } else {
+            //caso en que el argumento no está entre comillas
+            args[argc] = p;
+            while (*p && *p != ' ' && *p != '\t') p++;
+            if (*p) {
+                *p = '\0';
+                p++;
+            }
         }
-        else if (!in_quote && (*p == '"' || *p == '\'')) {
-            // Opening quote
-            in_quote = 1;
-            quote_char = *p;
-            // Remove it (incluyendo '\0')
-            memmove(p, p + 1, strlen(p + 1) + 1);
-        }
-        else if (in_quote && *p == quote_char) {
-            // Closing quote
-            in_quote = 0;
-            // Remove it (incluyendo '\0')
-            memmove(p, p + 1, strlen(p + 1) + 1);
-        }
-        else {
-            p++;
-        }
+        argc++;
     }
-
-    // NULL-terminate the args array
-    args[argc + 1] = NULL;
-    // Return count of args
-    return argc + 1;
+    
+    if (argc >= MAX_ARGS) {
+        return -1;
+    }
+    
+    args[argc] = NULL;
+    return argc;
 }
 
 int main() {
@@ -217,16 +116,15 @@ int main() {
         command_count = 0;
 
         char *tok = strtok(command, "|");
-        // while (tok && command_count < MAX_COMMANDS) {
-        //     while (*tok == ' ') tok++;
-        //     char *end = tok + strlen(tok) - 1;
-        //     while (end > tok && *end == ' ') *end-- = '\0';
+        while (tok && command_count < MAX_COMMANDS) {
+            while (*tok == ' ') tok++;
+            char *end = tok + strlen(tok) - 1;
+            while (end > tok && *end == ' ') *end-- = '\0';
 
-        //     commands[command_count++] = tok;
-        //     tok = strtok(NULL, "|");
-        // }
-        command_count = split_commands(command, commands);
-
+            commands[command_count++] = tok;
+            tok = strtok(NULL, "|");
+        }
+        
         int N = command_count;
         int pipes[N-1][2]; //creo los pipes necesarios (N-1 pipes para N comandos)
         for (int i = 0; i < N-1; i++) {
@@ -270,10 +168,6 @@ int main() {
                     fprintf(stderr, "Error: too many arguments\n");
                     exit(EXIT_FAILURE);
                 }
-
-                for (int k = 0; args[k]; k++)
-                    fprintf(stderr, "args[%d] = '%s'\n", k, args[k]);
-
                 execvp(args[0], args);
                 perror("Error executing command");
                 exit(EXIT_FAILURE);
