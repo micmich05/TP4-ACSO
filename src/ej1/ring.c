@@ -45,7 +45,7 @@ int main(int argc, char **argv)
         }
         
         if (pid == 0) {
-            myid = i;  // en el hijo, guardo su índice
+            myid = i;  // en el hijo guardo su índice
             break;
         }
         //el padre sigue creando hijos
