@@ -91,53 +91,46 @@ int parse_args(char *cmd, char **args) {
     char *p = cmd;
     int in_quote = 0;
     char quote_char = 0;
-    
+
     // Skip leading whitespace
     while (*p == ' ' || *p == '\t') p++;
     if (!*p) return 0;
-    
-    // Start by pointing to the beginning of the command
+
+    // Start first argument
     args[argc] = p;
-    
+
     while (*p && argc < MAX_ARGS - 1) {
         if (!in_quote && (*p == ' ' || *p == '\t')) {
-            // End the current argument
+            // End current arg
             *p = '\0';
             p++;
-            
             // Skip additional spaces
             while (*p == ' ' || *p == '\t') p++;
             if (!*p) break;
-            
-            // Start a new argument
+            // Start new arg
             args[++argc] = p;
-        } else if (!in_quote && (*p == '"' || *p == '\'')) {
-            // Found opening quote
+        }
+        else if (!in_quote && (*p == '"' || *p == '\'')) {
+            // Opening quote
             in_quote = 1;
             quote_char = *p;
-            
-            // Remove the opening quote by shifting the rest of the string
-            memmove(p, p + 1, strlen(p));
-        } else if (in_quote && *p == quote_char) {
-            // Found closing quote
+            // Remove it (incluyendo '\0')
+            memmove(p, p + 1, strlen(p + 1) + 1);
+        }
+        else if (in_quote && *p == quote_char) {
+            // Closing quote
             in_quote = 0;
-            
-            // Remove the closing quote by replacing it with null and moving past it
-            memmove(p, p + 1, strlen(p));
-        } else {
-            // Regular character, just move to next
+            // Remove it (incluyendo '\0')
+            memmove(p, p + 1, strlen(p + 1) + 1);
+        }
+        else {
             p++;
         }
     }
-    
-    if (argc >= MAX_ARGS) {
-        return -1;
-    }
-    
-    // Fix: Properly NULL terminate the argument list
+
+    // NULL-terminate the args array
     args[argc + 1] = NULL;
-    
-    // Fix: Return the correct count (including the command itself)
+    // Return count of args
     return argc + 1;
 }
 
@@ -222,6 +215,10 @@ int main() {
                     fprintf(stderr, "Error: too many arguments\n");
                     exit(EXIT_FAILURE);
                 }
+
+                for (int k = 0; args[k]; k++)
+                    fprintf(stderr, "args[%d] = '%s'\n", k, args[k]);
+
                 execvp(args[0], args);
                 perror("Error executing command");
                 exit(EXIT_FAILURE);
