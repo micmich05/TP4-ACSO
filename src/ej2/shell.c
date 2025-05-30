@@ -86,6 +86,60 @@
 //     args[argc] = NULL;
 //     return argc;
 // }
+// Divide `line` en comandos separados por '|' que NO estén entre comillas.
+// Devuelve la cantidad de comandos y llena commands[0..count-1].
+
+int split_commands(char *line, char **commands) {
+    int count = 0;
+    char *start = line;
+    int in_quote = 0;
+    char quote_char = 0;
+    char *p = line;
+
+    while (*p) {
+        if (!in_quote && (*p == '"' || *p == '\'')) {
+            // Abrimos comillas
+            in_quote    = 1;
+            quote_char  = *p;
+        }
+        else if ( in_quote && *p == quote_char) {
+            // Cerramos comillas
+            in_quote = 0;
+        }
+        else if (!in_quote && *p == '|') {
+            // Encontramos una tubería fuera de comillas → cortamos
+            *p = '\0';
+
+            // Trim espacios al inicio
+            char *cmd = start;
+            while (*cmd == ' ' || *cmd == '\t') cmd++;
+            // Trim espacios al final
+            char *end = cmd + strlen(cmd) - 1;
+            while (end > cmd && (*end == ' ' || *end == '\t')) {
+                *end = '\0';
+                end--;
+            }
+
+            commands[count++] = cmd;
+            start = p + 1;
+        }
+        p++;
+    }
+
+    // Resto después de la última tubería
+    char *cmd = start;
+    while (*cmd == ' ' || *cmd == '\t') cmd++;
+    char *end = cmd + strlen(cmd) - 1;
+    while (end > cmd && (*end == ' ' || *end == '\t')) {
+        *end = '\0';
+        end--;
+    }
+    commands[count++] = cmd;
+
+    return count;
+}
+
+
 int parse_args(char *cmd, char **args) {
     int argc = 0;
     char *p = cmd;
@@ -163,15 +217,16 @@ int main() {
         command_count = 0;
 
         char *tok = strtok(command, "|");
-        while (tok && command_count < MAX_COMMANDS) {
-            while (*tok == ' ') tok++;
-            char *end = tok + strlen(tok) - 1;
-            while (end > tok && *end == ' ') *end-- = '\0';
+        // while (tok && command_count < MAX_COMMANDS) {
+        //     while (*tok == ' ') tok++;
+        //     char *end = tok + strlen(tok) - 1;
+        //     while (end > tok && *end == ' ') *end-- = '\0';
 
-            commands[command_count++] = tok;
-            tok = strtok(NULL, "|");
-        }
-        
+        //     commands[command_count++] = tok;
+        //     tok = strtok(NULL, "|");
+        // }
+        command_count = split_commands(command, commands);
+
         int N = command_count;
         int pipes[N-1][2]; //creo los pipes necesarios (N-1 pipes para N comandos)
         for (int i = 0; i < N-1; i++) {
