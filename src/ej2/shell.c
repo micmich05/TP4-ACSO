@@ -366,12 +366,12 @@ int main() {
                     exit(0);
                 }
                 
-                // Depuración: puedes comentar estas líneas cuando todo funcione
-                fprintf(stderr, "Ejecutando comando: %s\n", args[0]);
-                fprintf(stderr, "Con argumentos:\n");
-                for (int j = 0; args[j] != NULL; j++) {
-                    fprintf(stderr, "  args[%d]: '%s'\n", j, args[j]);
-                }
+                //depuracion
+                // fprintf(stderr, "Ejecutando comando: %s\n", args[0]);
+                // fprintf(stderr, "Con argumentos:\n");
+                // for (int j = 0; args[j] != NULL; j++) {
+                //     fprintf(stderr, "  args[%d]: '%s'\n", j, args[j]);
+                // }
                 
                 execvp(args[0], args);
                 perror("Error executing command");
