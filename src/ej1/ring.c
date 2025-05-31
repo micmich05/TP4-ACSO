@@ -93,8 +93,8 @@ int main(int argc, char **argv)
 
         read(pipes[prev][0], &recv, sizeof(recv));
         close(pipes[prev][0]);
-        printf("Soy el hijo %d y me llegó el número %d\n", myid+1, recv);
-        
+        //printf("Soy el hijo %d y me llegó el número %d\n", myid+1, recv);
+
         recv++;  //incremento y paso al siguiente
         write(pipes[ring_idx][1], &recv, sizeof(recv));
         close(pipes[ring_idx][1]);
