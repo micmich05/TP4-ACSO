@@ -45,48 +45,6 @@
 //     return argc;
 // }
 
-// int parse_args(char *cmd, char **args) {
-//     int argc = 0;
-//     char *p = cmd;
-    
-//     while (*p && argc < MAX_ARGS - 1) {  
-//         while (*p == ' ' || *p == '\t') p++;
-//         if (!*p) break;
-        
-//         if (*p == '"' || *p == '\'') {  //manejar ambas comillas
-//             char quote = *p;  
-//             p++; //saltar comilla inicial
-//             args[argc] = p;
-            
-//             // Preservar contenido dentro de comillas SIN procesar escapes
-//             while (*p && *p != quote) {
-//                 p++;
-//             }
-            
-//             if (*p == quote) {
-//                 *p = '\0';
-//                 p++;
-//             }
-//         } else {
-//             //caso en que el argumento no está entre comillas
-//             args[argc] = p;
-//             while (*p && *p != ' ' && *p != '\t') p++;
-//             if (*p) {
-//                 *p = '\0';
-//                 p++;
-//             }
-//         }
-//         argc++;
-//     }
-    
-//     if (argc >= MAX_ARGS) {
-//         return -1;
-//     }
-    
-//     args[argc] = NULL;
-//     return argc;
-// }
-
 int parse_args(char *cmd, char **args) {
     int argc = 0;
     char *p = cmd;
@@ -213,6 +171,13 @@ int main() {
                     exit(0);  // termina el proceso hijo limpiamente
                 }
 
+                // Depuración: Mostrar los argumentos pasados a execvp
+                fprintf(stderr, "Ejecutando comando: %s\n", args[0]);
+                fprintf(stderr, "Con argumentos:\n");
+                for (int j = 0; args[j] != NULL; j++) {
+                    fprintf(stderr, "  args[%d]: '%s'\n", j, args[j]);
+                }
+                
                 execvp(args[0], args);
                 perror("Error executing command");
                 exit(EXIT_FAILURE);
