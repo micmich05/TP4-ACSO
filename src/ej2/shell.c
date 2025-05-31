@@ -266,7 +266,7 @@ int main() {
         /* Removes the newline character (\n) from the end of the string stored in command, if present. */
         command[strcspn(command, "\n")] = '\0';
         
-        /* Nuevo código que respeta las comillas al dividir por pipes */
+        //adaptado para manejar el regex y espacios al principio y final
         command_count = 0;
         char *start = command;
         int i = 0;
@@ -285,21 +285,21 @@ int main() {
                 }
             }
             
-            // Solo considera el pipe como separador si no está entre comillas
+            //solo considera el pipe como separador si no está entre comillas
             if (command[i] == '|' && !in_quotes) {
-                command[i] = '\0';  // Termina el comando actual
+                command[i] = '\0';  //termina el comando actual
                 
-                // Limpia espacios al principio y al final
+                //limpia espacios al principio y al final
                 char *cmd = start;
                 while (*cmd == ' ') cmd++;
                 char *end = cmd + strlen(cmd) - 1;
                 while (end > cmd && *end == ' ') *end-- = '\0';
                 
                 commands[command_count++] = cmd;
-                start = &command[i + 1];  // El siguiente comando comienza después del pipe
+                start = &command[i + 1];  //siguiente comando comienza después del pipe
                 
                 if (command_count >= MAX_COMMANDS) {
-                    fprintf(stderr, "Error: demasiados comandos\n");
+                    fprintf(stderr, "Error: Too many commands\n");
                     return 1;
                 }
             }
@@ -307,9 +307,9 @@ int main() {
             i++;
         }
 
-        // Añade el último comando
+        //agrega el último comando
         if (*start) {
-            // Limpia espacios al principio y al final
+            //limpia espacios al principio y al final
             while (*start == ' ') start++;
             char *end = start + strlen(start) - 1;
             while (end > start && *end == ' ') *end-- = '\0';
