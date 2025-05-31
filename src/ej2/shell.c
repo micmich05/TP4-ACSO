@@ -223,7 +223,7 @@ int parse_args(char *cmd, char **args) {
             p++; //saltar comilla inicial
             args[argc] = p;
             
-            // Preservar contenido dentro de comillas SIN procesar escapes
+            //contenido dentro de comillas SIN procesar escapes
             while (*p && *p != quote) {
                 p++;
             }
@@ -361,7 +361,7 @@ int main() {
                     exit(EXIT_FAILURE);
                 }
                 
-                // Verificar comando exit
+                //comando exit
                 if (strcmp(args[0], "exit") == 0) {
                     exit(0);
                 }
