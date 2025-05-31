@@ -166,6 +166,12 @@ int main() {
                     fprintf(stderr, "Error: too many arguments\n");
                     exit(EXIT_FAILURE);
                 }
+
+                if (strcmp(args[0], "exit") == 0) {
+                    // Si es el comando exit en un pipeline
+                    exit(0);  // Termina el proceso hijo limpiamente
+                }
+                
                 execvp(args[0], args);
                 perror("Error executing command");
                 exit(EXIT_FAILURE);
